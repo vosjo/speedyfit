@@ -3,7 +3,7 @@ import numpy as np
 
 import  unittest
 
-from speedyfit import fit
+from speedyfit import statfunc
 
 class TestMCMC(unittest.TestCase):
       
@@ -12,7 +12,7 @@ class TestMCMC(unittest.TestCase):
       theta = (26000, 5.8, 0.1429, 5771, 4.438, 1, 0.02)
       pnames = ('teff1', 'logg1', 'rad1', 'teff2', 'logg2', 'rad2', 'ebv')
       
-      derived_properties = fit.get_derived_properties(theta, pnames)
+      derived_properties = statfunc.get_derived_properties(theta, pnames)
       
       self.assertAlmostEqual(derived_properties['mass1'], 0.47, places=2, 
                            msg="sdB mass wrongly calculated: {}".format(derived_properties['mass1']))
@@ -32,14 +32,14 @@ class TestMCMC(unittest.TestCase):
       
       #-- colors (none scaled)
       colors = np.array([True,True,True])
-      chi2, scale, e_scale = fit.stat_chi2(meas, e_meas, colors, syn)
+      chi2, scale, e_scale = statfunc.stat_chi2(meas, e_meas, colors, syn)
       
       self.assertAlmostEqual(chi2, 20.1344, 2,
                              msg="Chi2 for colours not correct ({} != {})".format(chi2, 20.1344))
       
       #-- absolute magnitudes (scaled)
       colors = np.array([False,False,False])
-      chi2, scale, e_scale = fit.stat_chi2(meas, e_meas, colors, syn)
+      chi2, scale, e_scale = statfunc.stat_chi2(meas, e_meas, colors, syn)
       
       self.assertAlmostEqual(chi2, 3.32834, 2,
                              msg="Chi2 for colours not correct ({} != {})".format(chi2, 3.3283))
@@ -47,7 +47,7 @@ class TestMCMC(unittest.TestCase):
       #-- added distance
       constraints = {'distance': (1.5, 0.15)}
       colors = np.array([False,False,False])
-      chi2, scale, e_scale = fit.stat_chi2(meas, e_meas, colors, syn, **constraints)
+      chi2, scale, e_scale = statfunc.stat_chi2(meas, e_meas, colors, syn, **constraints)
       
       self.assertAlmostEqual(chi2, 25.2343, 2,
                              msg="Chi2 for distance not correct ({} != {})".format(chi2, 25.2343))

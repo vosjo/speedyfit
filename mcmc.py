@@ -1,61 +1,11 @@
- 
+import sys
 import numpy as np
- 
-def get_derived_properties(theta, pnames):
-   """
-   Function that will derive several properties based on the chosen models
-   
-   Currently the following properties are calculated:
-   - mass
-   - mass1
-   - mass2
-   - q
-   
-   returns dictionary of all properties that could be calculated.
-   """
-   
-   derived_properties = {}
-   
-   GG = 6.67384e-08
-   Rsol = 69550800000.0
-   Msol = 1.988547e+33
-   
-   #-- derive masses
-   if 'rad' in pnames and 'logg' in pnames:
-      mass = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
-      derived_properties['mass'] = mass / Msol
-   
-   if 'rad1' in pnames and 'logg1' in pnames:
-      mass = 10**theta[pnames.index('logg1')] * (theta[pnames.index('rad1')] * Rsol)**2 / GG
-      derived_properties['mass1'] = mass / Msol
-      
-   if 'rad2' in pnames and 'logg2' in pnames:
-      mass = 10**theta[pnames.index('logg2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
-      derived_properties['mass2'] = mass / Msol
-   
-   #-- derive mass ratio
-   if 'rad' in pnames and 'logg' in pnames and 'rad2' in pnames and 'logg2' in pnames:
-      m1 = ( theta[pnames.index('rad')]**2 * 10**theta[pnames.index('logg')] )
-      m2 = ( theta[pnames.index('rad2')]**2 * 10**theta[pnames.index('logg2')] )
-      derived_properties['q'] = m1 / m2
-      
-   if 'rad1' in pnames and 'logg1' in pnames and 'rad2' in pnames and 'logg2' in pnames:
-      m1 = ( theta[pnames.index('rad1')]**2 * 10**theta[pnames.index('logg1')] )
-      m2 = ( theta[pnames.index('rad2')]**2 * 10**theta[pnames.index('logg2')] )
-      derived_properties['q'] = m1 / m2
-   
-   #-- derive luminocity ratio
-   if 'rad' in pnames and 'teff' in pnames and 'rad2' in pnames and 'teff2' in pnames:
-      l1 = ( theta[pnames.index('rad')]**2 * theta[pnames.index('teff')]**4 )
-      l2 = ( theta[pnames.index('rad2')]**2 * theta[pnames.index('teff2')]**4 )
-      derived_properties['lr'] = l1 / l2
-      
-   if 'rad1' in pnames and 'teff1' in pnames and 'rad2' in pnames and 'teff2' in pnames:
-      l1 = ( theta[pnames.index('rad1')]**2 * theta[pnames.index('teff1')]**4 )
-      l2 = ( theta[pnames.index('rad2')]**2 * theta[pnames.index('teff2')]**4 )
-      derived_properties['lr'] = l1 / l2
-   
-   return derived_properties
+
+import emcee
+
+import filters, statfunc, model
+
+from ivs.io import ascii
  
 def lnlike(theta, derived_properties, y, yerr, **kwargs):
    """
@@ -64,25 +14,29 @@ def lnlike(theta, derived_properties, y, yerr, **kwargs):
    Calculates the chi2 of the model defined by theta compared to the observed magnitudes
    and colors. Will also take possible constraints on q, lr and d into account.
    """
+   model_func = kwargs.pop('model_func', model.get_itable)
+   stat_func = kwargs.pop('stat_func', statfunc.stat_chi2)
+   colors = kwargs.get('colors', [False for i in y])
+   constraints = kwargs.pop('constraints', {})
    
-   model_func = kwargs.pop('model_func',model.get_itable_pix)
-   stat_func = kwargs.pop('stat_func',stat_chi2)
-   photbands = kwargs.pop(photbands)
-   constraints = kwargs.pop(constraints, {})
-   grids = kwargs.pop('grids', [])
+   #-- create keyword parameters from theta
+   pars = {}
+   for name, value in zip(kwargs['pnames'], theta):
+      pars[name]=value
    
-   #-- check which filter is a color
-   colors = np.array([filters.is_color(photband) for photband in photbands],bool)
    
    #-- calculate synthetic magnitudes **kwargs contains infor about which grid to use
-   y_syn = model_func(theta, photbands=photbands, **kwargs)
+   kwargs.update(pars)
+   y_syn, Labs = model_func(**kwargs)
    
    
-   chisqs,scales,e_scales = stat_func(y,
+   chi2, scales, e_scales = stat_func(y,
                                       yerr,
-                                      colors, syn_flux, 
-                                      constraints_syn=constraints_syn,
+                                      colors, y_syn, 
+                                      constraints_syn=derived_properties,
                                       **constraints)
+   
+   return np.log( np.exp(-chi2/2.) )
    
 def lnprior(theta, derived_properties, limits, **kwargs):
    """
@@ -137,14 +91,107 @@ def lnprob(theta, y, yerr, limits, **kwargs):
    :rtype: float
    """
    
-   syn_drv = get_derived_properties(theta, kwargs['pnames'])
+   syn_drv = statfunc.get_derived_properties(theta, kwargs['pnames'])
    
    lp = lnprior(theta, syn_drv, limits, **kwargs)
    if not np.isfinite(lp):
       return -np.inf
    
-   ll = lnlike(theta, syn_drv, y, yerr)
+   ll = lnlike(theta, syn_drv, y, yerr, **kwargs)
    if not np.isfinite(ll):
       return -np.inf
    
    return lp + ll
+
+def MCMC(photfilename):
+   
+   #-- setup parameter and limits
+   pnames = ['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2', 'ebv']
+   limits = [[4000, 7000],
+             [2.5, 4.0],
+             [0.5, 5.0],
+             [20000, 40000],
+             [5.0, 6.5],
+             [0.05, 0.5],
+             [0, 0.02]]
+   limits = np.array(limits)
+   
+   d = 1000 / 1.475 * 44365810 # in Rsun
+   constraints = {'q':(2.35, 0.3), 'distance':(d, d/4)}
+   
+   #-- load observed photometry
+   master = ascii.read2recarray(photfilename)
+   photbands = master['photband']
+   colors = np.array([filters.is_color(photband) for photband in photbands],bool)
+   
+   obs = master['cmeas']
+   obs_err = master['e_cmeas']
+   
+   #-- Prepare the grids
+   gridfilename = '/home/joris/Python/ivsdata/sedtables/modelgrids/ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits'
+   
+   axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, gridfilename,
+               teffrange=(4000, 7000),loggrange=(2.5, 4.0),
+               ebvrange=(0.0, 0.02),
+               variables=['teff','logg','ebv'])
+   
+   grid1 = [axis_values, pixelgrid]
+   
+   gridfilename = '/home/joris/Python/ivsdata/sedtables/modelgrids/iTMAP2012_sdB_extended_lawfitzpatrick2004_Rv3.10.fits'
+      
+   axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, gridfilename,
+               teffrange=(20000, 40000),loggrange=(5.0, 6.5),
+               ebvrange=(0.0, 0.02),
+               variables=['teff','logg','ebv'])
+   
+   grid2 = [axis_values, pixelgrid]
+   
+   grids = [grid1, grid2]
+   
+   #-- initialize the walkers
+   nwalkers = 100
+   wlimits = [[4000, 5500],
+             [2.7, 3.2],
+             [0.75, 2.0],
+             [26000, 31000],
+             [5.5, 6.0],
+             [0.10, 0.20],
+             [0, 0.02]]
+   pos = [ np.random.uniform(lim[0], lim[1], nwalkers) for lim in limits]
+   pos = np.array(pos).T
+   
+   #-- setup the sampler
+   ndim = len(pnames)
+   sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=10, args=(obs, obs_err, limits), kwargs={'pnames':pnames, 'colors':colors, 'grid':grids, 'constraints':constraints})
+   
+   
+   #-- run the sampler
+   nsteps = 2000
+   for i, result in enumerate(sampler.sample(pos, iterations=nsteps)):
+      if (i+1) % 100 == 0:
+         print("{0:5.1%}".format(float(i) / nsteps))
+   
+   #-- remove first 50 steps and combine the results from the individual walkers 
+   samples = sampler.chain[:, 750:, :].reshape((-1, ndim))
+   
+   percentiles=[16, 50, 84]
+   pc  = np.percentile(samples, percentiles, axis=0)
+   results = [(v, e1, e2) for v, e1, e2 in zip(pc[1], pc[1]-pc[0], pc[2]-pc[1])]
+   
+   print results
+   return results, samples
+   
+   
+if __name__=="__main__":
+   
+   results, samples = MCMC('BD-7_5977.phot')
+   
+   import pylab as pl
+   import corner
+   
+   fig = corner.corner(samples, 
+                       labels = ['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2', 'ebv'],
+                       quantiles=[0.16, 0.5, 0.84],
+                       show_titles=True, title_kwargs={"fontsize": 12})
+                     
+   pl.show()
