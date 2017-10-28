@@ -5,6 +5,9 @@ from astropy.io import fits
 
 import interpol, filters
 
+from ivs.aux import loggers
+logger = loggers.get_basic_logger()
+
 def prepare_grid(photbands, gridfilename,
                  teffrange=(-np.inf,np.inf),loggrange=(-np.inf,np.inf),
                  ebvrange=(-np.inf,np.inf),
@@ -89,9 +92,10 @@ def get_itable(grid=[], **kwargs):
    #-- If there is only one component, we can directly return the result
    if len(components) == 1:
       kwargs.update(values)
-      return get_itable_single(grid=grids[0], **kwargs)
+      fluxes, Labs = get_itable_single(grid=grids[0], **kwargs)
+      return fluxes, {'L':np.sum(Labs,axis=0)}
    
-   fluxes, Labs = [],[]                                
+   fluxes, Labs = [],{}                               
    for i, (comp, grid) in enumerate(zip(components,grids)):
       kwargs_ = kwargs.copy()
       for par in parameters:
@@ -100,11 +104,9 @@ def get_itable(grid=[], **kwargs):
       f,L = get_itable_single(grid=grid, **kwargs_)
                                     
       fluxes.append(f)
-      Labs.append(L)
+      Labs['L'+comp] = np.sum(L,axis=0)
    
    fluxes = np.sum(fluxes,axis=0)
-   Labs = np.sum(Labs,axis=0)
-      
    return fluxes, Labs
 
 

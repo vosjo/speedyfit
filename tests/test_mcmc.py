@@ -3,7 +3,7 @@ import numpy as np
 
 import  unittest
 
-from speedyfit import mcmc, fit, model
+from speedyfit import mcmc, statfunc, model
 
 class TestMCMC(unittest.TestCase):
    
@@ -27,7 +27,7 @@ class TestMCMC(unittest.TestCase):
       
       derived_limits = {'q':(0.1, 1.0), 'mass1':(0.40, 0.55), 'mass2':(0.70, 2.0)}
       
-      derived_properties = fit.get_derived_properties(theta, pnames)
+      derived_properties = statfunc.get_derived_properties(theta, pnames)
       
       prior = mcmc.lnprior(theta, derived_properties, limits, 
                            pnames = pnames, derived_limits=derived_limits)
@@ -38,7 +38,7 @@ class TestMCMC(unittest.TestCase):
       
       
       theta = (15000, 5.8, 0.1429, 5771, 4.438, 1, 0.02)
-      derived_properties = fit.get_derived_properties(theta, pnames)
+      derived_properties = statfunc.get_derived_properties(theta, pnames)
       
       prior = mcmc.lnprior(theta, derived_properties, limits, 
                            pnames = pnames, derived_limits=derived_limits)
@@ -49,7 +49,7 @@ class TestMCMC(unittest.TestCase):
       
       
       theta = (26000, 5.8, 0.10, 5771, 4.438, 1, 0.02)
-      derived_properties = fit.get_derived_properties(theta, pnames)
+      derived_properties = statfunc.get_derived_properties(theta, pnames)
       
       prior = mcmc.lnprior(theta, derived_properties, limits, 
                            pnames = pnames, derived_limits=derived_limits)
@@ -58,32 +58,32 @@ class TestMCMC(unittest.TestCase):
                        msg="mass1 out of limits, expected prior = -inf, was {}".format(prior))
       
       
-   def test_likelihood(self):
+   #def test_likelihood(self):
       
-      photbands = ['STROMGREN.U', 'STROMGREN.B']
-      gridfilename = '/home/joris/Python/ivsdata/sedtables/modelgrids/ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits'
+      #photbands = ['STROMGREN.U', 'STROMGREN.B']
+      #gridfilename = '/home/joris/Python/ivsdata/sedtables/modelgrids/ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits'
       
-      axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, gridfilename,
-                 teffrange=(4000, 5000),loggrange=(3.5, 4.0),
-                 ebvrange=(0.0, 0.02),
-                 variables=['teff','logg','ebv'])
+      #axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, gridfilename,
+                 #teffrange=(4000, 5000),loggrange=(3.5, 4.0),
+                 #ebvrange=(0.0, 0.02),
+                 #variables=['teff','logg','ebv'])
       
-      grids = [[axis_values, pixelgrid],]
-      
-      
-      theta = (4700, 3.8, 0.01)
-      pnames = ['teff', 'logg', 'ebv']
-      derived_properties = fit.get_derived_properties(theta, pnames)
-      
-      y = np.array([5.0, 6.0])
-      yerr = np.array([0.5, 0.75])
-      
-      kwargs = dict(pnames = pnames,
-                    photbands = photbands, 
-                    grid=grids)
-      
-      print mcmc.lnlike(theta, derived_properties, y, yerr, **kwargs)
+      #grids = [[axis_values, pixelgrid],]
       
       
-      self.assertTrue(True)
+      #theta = (4700, 3.8, 0.01)
+      #pnames = ['teff', 'logg', 'ebv']
+      #derived_properties = statfunc.get_derived_properties(theta, pnames)
+      
+      #y = np.array([5.0, 6.0])
+      #yerr = np.array([0.5, 0.75])
+      
+      #kwargs = dict(pnames = pnames,
+                    #photbands = photbands, 
+                    #grid=grids)
+      
+      #print mcmc.lnlike(theta, derived_properties, y, yerr, **kwargs)
+      
+      
+      #self.assertTrue(True)
       

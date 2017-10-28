@@ -3,7 +3,8 @@ import numpy as np
 
 import emcee
 
-import filters, statfunc, model
+import statfunc, model
+from ivs.sed import filters
 
 from ivs.io import ascii
  
@@ -27,7 +28,7 @@ def lnlike(theta, derived_properties, y, yerr, **kwargs):
    
    #-- calculate synthetic magnitudes **kwargs contains infor about which grid to use
    kwargs.update(pars)
-   y_syn, Labs = model_func(**kwargs)
+   y_syn, extra_drv = model_func(**kwargs)
    
    
    chi2, scales, e_scales = stat_func(y,
@@ -36,7 +37,10 @@ def lnlike(theta, derived_properties, y, yerr, **kwargs):
                                       constraints_syn=derived_properties,
                                       **constraints)
    
-   return np.log( np.exp(-chi2/2.) )
+   #-- add distance to extra derived parameter (which already contains luminosities)
+   extra_drv['d'] = np.sqrt(1/scales)/44365810.04823812 
+   
+   return -chi2/2, extra_drv
    
 def lnprior(theta, derived_properties, limits, **kwargs):
    """
@@ -62,7 +66,7 @@ def lnprior(theta, derived_properties, limits, **kwargs):
    #-- check if all parameters are within their limits
    if any(theta < limits[:,0]) or any(theta > limits[:,1]):
       return -np.inf
-      
+   
    #-- check that all derived properties are within limits
    for lim in derived_limits.keys():
       if derived_properties[lim] < derived_limits[lim][0] or\
@@ -92,106 +96,61 @@ def lnprob(theta, y, yerr, limits, **kwargs):
    """
    
    syn_drv = statfunc.get_derived_properties(theta, kwargs['pnames'])
+   syn_drv['d'] = 0
    
    lp = lnprior(theta, syn_drv, limits, **kwargs)
    if not np.isfinite(lp):
-      return -np.inf
+      return -np.inf, syn_drv
    
-   ll = lnlike(theta, syn_drv, y, yerr, **kwargs)
+   ll, extra_drv = lnlike(theta, syn_drv, y, yerr, **kwargs)
+   syn_drv.update(extra_drv)
    if not np.isfinite(ll):
-      return -np.inf
+      return -np.inf, syn_drv
    
-   return lp + ll
+   return lp + ll, syn_drv
+   
 
-def MCMC(photfilename):
+def MCMC(obs, obs_err, photbands, 
+         pnames, limits, grids, 
+         constraints={}, derived_limits={},
+         nwalkers=100, nsteps=1000, nrelax=150, a=15, percentiles=[16, 50, 84]):
    
-   #-- setup parameter and limits
-   pnames = ['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2', 'ebv']
-   limits = [[4000, 7000],
-             [2.5, 4.0],
-             [0.5, 5.0],
-             [20000, 40000],
-             [5.0, 6.5],
-             [0.05, 0.5],
-             [0, 0.02]]
-   limits = np.array(limits)
-   
-   d = 1000 / 1.475 * 44365810 # in Rsun
-   constraints = {'q':(2.35, 0.3), 'distance':(d, d/4)}
-   
-   #-- load observed photometry
-   master = ascii.read2recarray(photfilename)
-   photbands = master['photband']
+   #-- check which bands are colors
    colors = np.array([filters.is_color(photband) for photband in photbands],bool)
    
-   obs = master['cmeas']
-   obs_err = master['e_cmeas']
-   
-   #-- Prepare the grids
-   gridfilename = '/home/joris/Python/ivsdata/sedtables/modelgrids/ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits'
-   
-   axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, gridfilename,
-               teffrange=(4000, 7000),loggrange=(2.5, 4.0),
-               ebvrange=(0.0, 0.02),
-               variables=['teff','logg','ebv'])
-   
-   grid1 = [axis_values, pixelgrid]
-   
-   gridfilename = '/home/joris/Python/ivsdata/sedtables/modelgrids/iTMAP2012_sdB_extended_lawfitzpatrick2004_Rv3.10.fits'
-      
-   axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, gridfilename,
-               teffrange=(20000, 40000),loggrange=(5.0, 6.5),
-               ebvrange=(0.0, 0.02),
-               variables=['teff','logg','ebv'])
-   
-   grid2 = [axis_values, pixelgrid]
-   
-   grids = [grid1, grid2]
-   
    #-- initialize the walkers
-   nwalkers = 100
-   wlimits = [[4000, 5500],
-             [2.7, 3.2],
-             [0.75, 2.0],
-             [26000, 31000],
-             [5.5, 6.0],
-             [0.10, 0.20],
-             [0, 0.02]]
+   np.random.seed(1)
    pos = [ np.random.uniform(lim[0], lim[1], nwalkers) for lim in limits]
    pos = np.array(pos).T
    
    #-- setup the sampler
    ndim = len(pnames)
-   sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=10, args=(obs, obs_err, limits), kwargs={'pnames':pnames, 'colors':colors, 'grid':grids, 'constraints':constraints})
+   kwargs = {'pnames':pnames, 
+             'colors':colors, 
+             'grid':grids, 
+             'constraints':constraints, 
+             'derived_limits':derived_limits}
    
+   sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=a, 
+                                   args=(obs, obs_err, limits), kwargs=kwargs)
    
    #-- run the sampler
-   nsteps = 2000
    for i, result in enumerate(sampler.sample(pos, iterations=nsteps)):
       if (i+1) % 100 == 0:
          print("{0:5.1%}".format(float(i) / nsteps))
    
-   #-- remove first 50 steps and combine the results from the individual walkers 
-   samples = sampler.chain[:, 750:, :].reshape((-1, ndim))
+   #-- remove first nrelax steps and combine the results from the individual walkers 
+   samples = sampler.chain[:, nrelax:, :].reshape((-1, ndim))
+   blobs = np.array(sampler.blobs)[nrelax:, :].flatten()
    
-   percentiles=[16, 50, 84]
+   #-- calculate results
    pc  = np.percentile(samples, percentiles, axis=0)
    results = [(v, e1, e2) for v, e1, e2 in zip(pc[1], pc[1]-pc[0], pc[2]-pc[1])]
+   results = np.array(results)
    
-   print results
-   return results, samples
+   return results, samples, blobs
    
    
-if __name__=="__main__":
+
    
-   results, samples = MCMC('BD-7_5977.phot')
    
-   import pylab as pl
-   import corner
-   
-   fig = corner.corner(samples, 
-                       labels = ['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2', 'ebv'],
-                       quantiles=[0.16, 0.5, 0.84],
-                       show_titles=True, title_kwargs={"fontsize": 12})
-                     
-   pl.show()

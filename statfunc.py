@@ -115,15 +115,15 @@ def stat_chi2(meas, e_meas, colors, syn, **kwargs):
    # First deal with Chi2 of the observations
    #=========================================
    #-- if syn represents only one measurement
-   if sum(-colors) > 0:
-      ratio = (meas/syn)[-colors]
-      weights = (meas/e_meas)[-colors]
+   if sum(~colors) > 0:
+      ratio = (meas/syn)[~colors]
+      weights = (meas/e_meas)[~colors]
       #-- weighted average and standard deviation
       scale = np.average(ratio,weights=weights)
       e_scale = np.sqrt(np.dot(weights, (ratio-scale)**2)/weights.sum())
    else:
       scale,e_scale = 0,0
-      
+   
    #-- we don't need to scale the colors, only the absolute fluxes
    chisq = np.where(colors, (syn-meas)**2/e_meas**2, (syn*scale-meas)**2/e_meas**2)
    
@@ -134,7 +134,7 @@ def stat_chi2(meas, e_meas, colors, syn, **kwargs):
    
    #-- Chi2 of the distance measurement
    #   this can only be done if absolute fluxes are included in the fit.
-   if 'distance' in kwargs and sum(-colors) > 0:
+   if 'distance' in kwargs and sum(~colors) > 0:
       syn_scale = 1/kwargs['distance'][0]**2
       syn_scale_e = 2. / kwargs['distance'][0]**3 * kwargs['distance'][1]
       
@@ -142,9 +142,6 @@ def stat_chi2(meas, e_meas, colors, syn, **kwargs):
       
       # append to chisq array
       chisq = np.append(chisq, chi2_d)
-      
-      ##-- add distance to derived properties
-      #derived_properties['distance'] = 1 / np.sqrt(scale)
    
    #-- Chi2 of the Mass-Ratio
    #   q needs to be computed elsewhere and provided in the kwargs

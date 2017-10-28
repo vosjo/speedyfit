@@ -103,3 +103,71 @@ class TestModel(unittest.TestCase):
          self.assertEqual(f1+f2, ft, 
                           msg="binary SED should have sum of flux of single SED, ({} + {} != {})".format(flux1, flux2, fluxt))
       
+      
+   def test_itable_vega(self):
+      
+      photbands = ['STROMGREN.U', 'STROMGREN.B', 'STROMGREN.V', 'STROMGREN.Y','2MASS.KS']
+      gridfilename = '/home/joris/Python/ivsdata/sedtables/modelgrids/ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits'
+      
+      
+      axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, gridfilename,
+                 teffrange=(8000, 10000),loggrange=(4.0, 5.0),
+                 ebvrange=(0.0, 0.02),
+                 variables=['teff','logg','ebv'])
+      
+      grid = [axis_values, pixelgrid]
+      
+      syn, Labs = model.get_itable_single(teff=9602, logg=4.10, ebv=0.0, rad=2.362, grid=grid)
+      
+      syn = syn / 340745610.888946**2 # correct for distance
+      Labs = Labs[0]
+      
+      obs = np.array([8.528e-10, 5.664e-09, 6.190e-09, 3.547e-09, 3.803e-11])
+      obs_e = np.array([3.458e-11, 1.484e-10, 1.788e-10, 9.148e-11, 6.515e-12])
+      
+      ratio = (obs/syn)
+      weights = (obs/obs_e)
+      scale = np.average(ratio,weights=weights)
+      e_scale = np.sqrt(np.dot(weights, (ratio-scale)**2)/weights.sum())
+      
+      self.assertTrue(abs(scale - 1.0) < e_scale, 
+                      msg="Cannot reproduce VEGA at correct distance! scale = {:0.1f}+-{:0.1f} instead of 1".format(scale, e_scale))
+      
+      self.assertTrue(abs(Labs - 40) < 2.5, 
+                      msg="Vega should have luminosity of 40.12 Lsol, model gives {:0.2f} ".format(Labs))
+      
+   def test_itable_EG50(self):
+      """
+      Test the returned flux for a known white dwarf star EG 50
+      Teff = 22290 +- 350 K
+      logg = 8.10 +- 0.05
+      Rad = 0.012 +- 0.001 Rsol
+      d = 19 +- 3 pc
+      """
+      
+      photbands = ['STROMGREN.U', 'STROMGREN.V', 'STROMGREN.B', 'STROMGREN.Y','2MASS.H']
+      gridfilename = '/home/joris/Python/ivsdata/sedtables/modelgrids/iTMAP2012_sdB_extended_lawfitzpatrick2004_Rv3.10.fits'
+      
+      axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, gridfilename,
+                 teffrange=(20000, 40000),loggrange=(5.0, 6.5),
+                 ebvrange=(0.0, 0.02),
+                 variables=['teff','logg','ebv'])
+      
+      grid = [axis_values, pixelgrid]
+      
+      syn, Labs = model.get_itable_single(teff=22290, logg=6.5, ebv=0.0, rad=0.012, grid=grid)
+      
+      syn = syn / 842950390.9165244**2 # correct for distance
+      Labs = Labs[0]
+      
+      obs = np.array([4.89e-14, 1.02e-13, 9.31e-14, 5.34e-14, 9.76e-16])
+      obs_e = np.array([2.53e-15, 3.99e-15, 3.08e-15, 1.72e-15, 5.48e-17])
+      
+      ratio = (obs/syn)
+      weights = (obs/obs_e)
+      scale = np.average(ratio,weights=weights)
+      e_scale = np.sqrt(np.dot(weights, (ratio-scale)**2)/weights.sum())
+      
+      self.assertTrue(abs(scale - 1.0) < e_scale, 
+                      msg="Cannot reproduce EG 50 at correct distance! scale = {:0.1f}+-{:0.1f} instead of 1".format(scale, e_scale))
+      
