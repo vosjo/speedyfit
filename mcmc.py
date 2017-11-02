@@ -134,19 +134,51 @@ def MCMC(obs, obs_err, photbands,
    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=a, 
                                    args=(obs, obs_err, limits), kwargs=kwargs)
    
+   #================
+   # MCMC part
+   
+   #-- burn in (let walkers relax before starting to store results)
+   print "\nBurn In"
+   for i, result in enumerate(sampler.sample(pos, iterations=nrelax, storechain=False)):
+      if (i+1) % 100 == 0:
+         print("{0:5.1%}".format(float(i) / nrelax))
+   pos = result[0]
+   
+   print "\nRun"
    #-- run the sampler
    for i, result in enumerate(sampler.sample(pos, iterations=nsteps)):
       if (i+1) % 100 == 0:
          print("{0:5.1%}".format(float(i) / nsteps))
    
+   
    #-- remove first nrelax steps and combine the results from the individual walkers 
-   samples = sampler.chain[:, nrelax:, :].reshape((-1, ndim))
-   blobs = np.array(sampler.blobs)[nrelax:, :].flatten()
+   samples = sampler.flatchain
+   blobs = np.array(sampler.blobs).flatten()
+   probabilities = sampler.flatlnprobability
+   
+   #-- remove all steps that are not accepted (lnprob = -inf)
+   accept = np.where(np.isfinite(probabilities))
+   samples = samples[accept]
+   blobs = blobs[accept]
    
    #-- calculate results
    pc  = np.percentile(samples, percentiles, axis=0)
    results = [(v, e1, e2) for v, e1, e2 in zip(pc[1], pc[1]-pc[0], pc[2]-pc[1])]
    results = np.array(results)
+   
+   #-- convert to recarrays
+   dtypes = [(n, 'f8') for n in pnames]
+   samples = np.array([tuple(s) for s in samples], dtype=dtypes)
+   
+   names = blobs[0].keys()
+   pars = []
+   for b in blobs:
+      if len(b.keys()) < 7:
+         print 'err', b
+      pars.append(tuple([b[n] for n in names]))
+   dtypes = [(n, 'f8') for n in names]
+   blobs = np.array(pars, dtype=dtypes)
+   
    
    return results, samples, blobs
    

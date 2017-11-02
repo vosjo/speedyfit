@@ -3,7 +3,8 @@ import numpy as np
  
 from astropy.io import fits 
 
-import interpol, filters
+import interpol
+from ivs.sed import filters
 
 from ivs.aux import loggers
 logger = loggers.get_basic_logger()
