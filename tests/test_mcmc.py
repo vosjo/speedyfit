@@ -19,13 +19,13 @@ class TestMCMC(unittest.TestCase):
    def test_prior(self):
       
       theta = (26000, 5.8, 0.1429, 5771, 4.438, 1, 0.02)
-      pnames = ('teff1', 'logg1', 'rad1', 'teff2', 'logg2', 'rad2', 'ebv')
+      pnames = ('teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2', 'ebv')
       
       limits = np.array([(20000, 40000), (5.0, 6.5), (0.05, 0.25), 
                          (4000, 8000),   (4.0, 5.0), (0.50, 2.10),
                          (0.00, 0.05)])
       
-      derived_limits = {'q':(0.1, 1.0), 'mass1':(0.40, 0.55), 'mass2':(0.70, 2.0)}
+      derived_limits = {'q':(0.1, 1.0), 'mass':(0.40, 0.55), 'mass2':(0.70, 2.0)}
       
       derived_properties = statfunc.get_derived_properties(theta, pnames)
       
@@ -55,7 +55,7 @@ class TestMCMC(unittest.TestCase):
                            pnames = pnames, derived_limits=derived_limits)
       
       self.assertEqual(prior, -np.inf,
-                       msg="mass1 out of limits, expected prior = -inf, was {}".format(prior))
+                       msg="mass out of limits, expected prior = -inf, was {}".format(prior))
       
       
    #def test_likelihood(self):

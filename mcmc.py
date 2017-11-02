@@ -4,7 +4,6 @@ import numpy as np
 import emcee
 
 import statfunc, model
-from ivs.sed import filters
 
 from ivs.io import ascii
  
@@ -116,7 +115,7 @@ def MCMC(obs, obs_err, photbands,
          nwalkers=100, nsteps=1000, nrelax=150, a=15, percentiles=[16, 50, 84]):
    
    #-- check which bands are colors
-   colors = np.array([filters.is_color(photband) for photband in photbands],bool)
+   colors = np.array([model.is_color(photband) for photband in photbands],bool)
    
    #-- initialize the walkers
    np.random.seed(1)

@@ -49,15 +49,11 @@ class TestModel(unittest.TestCase):
       
       for f1, f2 in zip(flux1, flux2):
          self.assertEqual(f1, f2, 
-                          msg="output of get_itable should be same as get_itable_single, ({} != {})".format(flux1, flux2))
-      self.assertEqual(Labs1, Labs2, 
-                          msg="output of get_itable should be same as get_itable_single, ({} != {})".format(flux1, flux2))
+                          msg="flux output of get_itable should be same as get_itable_single, ({} != {})".format(flux1, flux2))
       
-      ##print axis_values
-      ##print pixelgrid
-      #print pixelgrid.shape
+      self.assertEqual(Labs1[0], Labs2['L'], 
+                          msg="Labs output of get_itable should be same as get_itable_single, ({} != {})".format(Labs1[0], Labs2['L']))
       
-      #self.assertTrue(False)
       
    def test_itable(self):
       

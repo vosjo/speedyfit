@@ -10,12 +10,12 @@ class TestMCMC(unittest.TestCase):
    def test_derived_properties(self):
       
       theta = (26000, 5.8, 0.1429, 5771, 4.438, 1, 0.02)
-      pnames = ('teff1', 'logg1', 'rad1', 'teff2', 'logg2', 'rad2', 'ebv')
+      pnames = ('teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2', 'ebv')
       
       derived_properties = statfunc.get_derived_properties(theta, pnames)
       
-      self.assertAlmostEqual(derived_properties['mass1'], 0.47, places=2, 
-                           msg="sdB mass wrongly calculated: {}".format(derived_properties['mass1']))
+      self.assertAlmostEqual(derived_properties['mass'], 0.47, places=2, 
+                           msg="sdB mass wrongly calculated: {}".format(derived_properties['mass']))
       
       self.assertAlmostEqual(derived_properties['mass2'], 1.00, places=2, 
                            msg="Solar mass wrongly calculated: {}".format(derived_properties['mass2']))

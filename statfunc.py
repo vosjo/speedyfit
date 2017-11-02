@@ -1,32 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-Fit SED models to observed data using various approaches.
-"""
-import logging
-import sys
-import pyfits
-import itertools
-import re
-import copy
-
-import pylab as pl
 import numpy as np
-from numpy import inf
-import scipy
-from scipy.interpolate import Rbf
-from scipy.optimize import fmin,fmin_powell
-from ivs.statistics import pca
-from ivs.sed import model
-from ivs.sed import filters
-from ivs.sed.decorators import iterate_gridsearch,parallel_gridsearch
-from ivs.sigproc import fit as sfit
-from ivs.aux import numpy_ext
-from ivs.aux import progressMeter
-from ivs.aux.decorators import make_parallel
-from ivs.units import constants
-from ivs.units import conversions as cv
 
-logger = logging.getLogger("SED.FIT")
 
 def get_derived_properties(theta, pnames):
    """
@@ -51,10 +25,6 @@ def get_derived_properties(theta, pnames):
    if 'rad' in pnames and 'logg' in pnames:
       mass = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
       derived_properties['mass'] = mass / Msol
-   
-   if 'rad1' in pnames and 'logg1' in pnames:
-      mass = 10**theta[pnames.index('logg1')] * (theta[pnames.index('rad1')] * Rsol)**2 / GG
-      derived_properties['mass1'] = mass / Msol
       
    if 'rad2' in pnames and 'logg2' in pnames:
       mass = 10**theta[pnames.index('logg2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
