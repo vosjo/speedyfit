@@ -52,9 +52,83 @@ def get_derived_properties(theta, pnames):
       l2 = ( theta[pnames.index('rad2')]**2 * theta[pnames.index('teff2')]**4 )
       derived_properties['lr'] = l1 / l2
    
+   #-- add empty values for luminosity and distance to prevent problems with 
+   #   failed models
+   derived_properties.update({'d':0, 'L':0})
+   if 'rad2' in pnames:
+      derived_properties['L2'] = 0
+   
    return derived_properties
 
+def get_derived_properties_binary(theta, pnames):
+   """
+   Function that will derive several properties based on the chosen models
+   
+   Currently the following properties are calculated:
+   - mass
+   - mass1
+   - mass2
+   - q
+   
+   returns dictionary of all properties that could be calculated.
+   """
+   
+   derived_properties = {}
+   
+   GG = 6.67384e-08
+   Rsol = 69550800000.0
+   Msol = 1.988547e+33
+   
+   #-- derive masses
+   m1 = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+   derived_properties['mass'] = m1 / Msol
+      
+   m2 = 10**theta[pnames.index('logg2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
+   derived_properties['mass2'] = m2 / Msol
+   
+   #-- derive mass ratio
+   derived_properties['q'] = m1 / m2
+   
+   
+   #-- derive luminosity ratio
+   l1 = ( theta[pnames.index('rad')]**2 * theta[pnames.index('teff')]**4 )
+   l2 = ( theta[pnames.index('rad2')]**2 * theta[pnames.index('teff2')]**4 )
+   derived_properties['lr'] = l1 / l2
+   
+   #-- add empty values for luminosity and distance to prevent problems with 
+   #   failed models
+   derived_properties.update({'d':0, 'L':0, 'L2':0})
+   
+   return derived_properties
 
+def get_derived_properties_single(theta, pnames):
+   """
+   Function that will derive several properties based on the chosen models
+   
+   Currently the following properties are calculated:
+   - mass
+   - mass1
+   - mass2
+   - q
+   
+   returns dictionary of all properties that could be calculated.
+   """
+   
+   derived_properties = {}
+   
+   GG = 6.67384e-08
+   Rsol = 69550800000.0
+   Msol = 1.988547e+33
+   
+   #-- derive masses
+   mass = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+   derived_properties['mass'] = mass / Msol
+   
+   #-- add empty values for luminosity and distance to prevent problems with 
+   #   failed models
+   derived_properties.update({'d':0, 'L':0})
+   
+   return derived_properties
 
 def stat_chi2(meas, e_meas, colors, syn, **kwargs):
    """

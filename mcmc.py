@@ -19,6 +19,7 @@ def lnlike(theta, derived_properties, y, yerr, **kwargs):
    colors = kwargs.get('colors', [False for i in y])
    constraints = kwargs.pop('constraints', {})
    
+   
    #-- create keyword parameters from theta
    pars = {}
    for name, value in zip(kwargs['pnames'], theta):
@@ -93,9 +94,8 @@ def lnprob(theta, y, yerr, limits, **kwargs):
    :return: the sum of the log prior and log likelihood
    :rtype: float
    """
-   
-   syn_drv = statfunc.get_derived_properties(theta, kwargs['pnames'])
-   syn_drv['d'] = 0
+   prop_func = kwargs.pop('prop_func', statfunc.get_derived_properties)
+   syn_drv = prop_func(theta, kwargs['pnames'])
    
    lp = lnprior(theta, syn_drv, limits, **kwargs)
    if not np.isfinite(lp):
@@ -118,7 +118,6 @@ def MCMC(obs, obs_err, photbands,
    colors = np.array([model.is_color(photband) for photband in photbands],bool)
    
    #-- initialize the walkers
-   np.random.seed(1)
    pos = [ np.random.uniform(lim[0], lim[1], nwalkers) for lim in limits]
    pos = np.array(pos).T
    
@@ -128,7 +127,8 @@ def MCMC(obs, obs_err, photbands,
              'colors':colors, 
              'grid':grids, 
              'constraints':constraints, 
-             'derived_limits':derived_limits}
+             'derived_limits':derived_limits,
+             'prop_func':statfunc.get_derived_properties_binary}
    
    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=a, 
                                    args=(obs, obs_err, limits), kwargs=kwargs)
@@ -155,7 +155,10 @@ def MCMC(obs, obs_err, photbands,
    blobs = np.array(sampler.blobs).flatten()
    probabilities = sampler.flatlnprobability
    
-   #-- remove all steps that are not accepted (lnprob = -inf)
+   #-- clear the samples to save memory
+   sampler.reset()
+   
+   #-- remove all steps that are not accepted (lnprob == -inf)
    accept = np.where(np.isfinite(probabilities))
    samples = samples[accept]
    blobs = blobs[accept]
@@ -177,6 +180,11 @@ def MCMC(obs, obs_err, photbands,
       pars.append(tuple([b[n] for n in names]))
    dtypes = [(n, 'f8') for n in names]
    blobs = np.array(pars, dtype=dtypes)
+   
+   #-- remove all steps where model creation failed (d == 0)
+   accept = np.where(blobs['d'] > 0)
+   samples = samples[accept]
+   blobs = blobs[accept]
    
    
    return results, samples, blobs
