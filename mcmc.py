@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from numpy.lib.recfunctions import merge_arrays
 
 import emcee
 
@@ -186,8 +187,7 @@ def MCMC(obs, obs_err, photbands,
    samples = samples[accept]
    blobs = blobs[accept]
    
-   
-   return results, samples, blobs
+   return results, merge_arrays((samples, blobs), asrecarray=True, flatten=True)
    
    
 

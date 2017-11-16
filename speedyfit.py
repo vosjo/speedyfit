@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 import pylab as pl
 
-import mcmc, model, plotting
+import mcmc, model, plotting, fileio
 
 from ivs.io import ascii
 
@@ -25,7 +25,7 @@ limits:
 - [4.5, 6.5]
 - [0.05, 0.3]
 - [0, 0.02]
-# constraints on distance and mass ratio is known
+# constraints on distance and mass ratio if known
 constraints:
   q: [3.03, 0.2]
   distance: [600, 50] # in parsec
@@ -42,6 +42,8 @@ nwalkers: 100    # total number of walkers
 nsteps: 2000     # steps taken by each walker (not including burn-in)
 nrelax: 500      # burn-in steps taken by each walker
 a: 10            # relative size of the steps taken
+# output options
+datafile: none   # filepath to write results of all walkers
 """
 
 if __name__=="__main__":
@@ -98,17 +100,22 @@ if __name__=="__main__":
       grids.append([axis_values, pixelgrid])
    
    #-- pars mcmc setup
-   nwalkers = setup.pop('nwalkers', 100)
-   nsteps = setup.pop('nsteps', 2000)
-   nrelax = setup.pop('nrelax', 500)
-   a = setup.pop('a', 10)
+   nwalkers = setup.get('nwalkers', 100)
+   nsteps = setup.get('nsteps', 2000)
+   nrelax = setup.get('nrelax', 500)
+   a = setup.get('a', 10)
    
    #-- MCMC
-   results, samples, blobs = mcmc.MCMC(obs, obs_err, photbands, 
-                                    pnames, limits, grids, 
-                                    constraints=constraints, derived_limits=derived_limits,
-                                    nwalkers=nwalkers, nsteps=nsteps, nrelax=nrelax,
-                                    a=a, percentiles=[16, 50, 84])
+   results, samples = mcmc.MCMC(obs, obs_err, photbands, 
+                                 pnames, limits, grids, 
+                                 constraints=constraints, derived_limits=derived_limits,
+                                 nwalkers=nwalkers, nsteps=nsteps, nrelax=nrelax,
+                                 a=a, percentiles=[16, 50, 84])
+   
+   datafile = setup.get('datafile', None)
+   if not datafile is None:
+      fileio.write2fits(samples, datafile, setup=setup)
+   
    
    pars = {}
    for par, v in zip(pnames, results):

@@ -83,8 +83,6 @@ def plot_distribution_density(data, xpar, ypar, percentiles=[16, 50, 84]):
  
 def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
    
-   print pars, constraints
-   
    grid1 = dict(grid='kuruczsdb', z=0, Rv=3.1)
    grid2 = dict(grid='tmapsdb', z=0, Rv=3.1)
    model.set_defaults_multiple(grid1,grid2)
