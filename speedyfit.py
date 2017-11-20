@@ -4,6 +4,7 @@ import yaml
 import argparse
 import numpy as np
 import pylab as pl
+import corner
 
 import mcmc, model, plotting, fileio
 
@@ -44,6 +45,7 @@ nrelax: 500      # burn-in steps taken by each walker
 a: 10            # relative size of the steps taken
 # output options
 datafile: none   # filepath to write results of all walkers
+plotpath: none   # filepath to save plots with results
 """
 
 if __name__=="__main__":
@@ -53,6 +55,8 @@ if __name__=="__main__":
                        help="use setup given in filename")
    parser.add_argument("-empty", type=str, dest='empty', default=None,
                        help="When used, create an empty setup file with given filename")
+   parser.add_argument("-p", action='store_true', dest='plot', 
+                       help="Turn on plotting")
    args, variables = parser.parse_known_args()
    
    if not args.empty is None:
@@ -63,6 +67,12 @@ if __name__=="__main__":
       
       sys.exit()
    
+   if args.filename is None:
+      
+      print "Nothing to do"
+      sys.exit()
+   
+   #-- load the setup file
    setupfile = open(args.filename)
    setup = yaml.safe_load(setupfile)
    setupfile.close()
@@ -114,11 +124,44 @@ if __name__=="__main__":
    
    datafile = setup.get('datafile', None)
    if not datafile is None:
-      fileio.write2fits(samples, datafile, setup=setup)
+      
+      #-- get plain text settings to retain comments and ordering
+      setupfile = open(args.filename)
+      setup_str = "".join(setupfile.readlines())
+      setupfile.close()
+      
+      fileio.write2fits(samples, datafile, setup=setup_str)
    
    
-   pars = {}
-   for par, v in zip(pnames, results):
-      pars[par] = v[0]
-   plotting.plot_fit(obs, obs_err, photbands, pars=pars, constraints=constraints)
-   pl.show()
+   plotpath = setup.get('plotpath', None)
+   if args.plot or not plotpath is None:
+      
+      pars = {}
+      for par, v in zip(samples.dtype.names, results):
+         pars[par] = v[0]
+         
+      pl.figure(1)
+      plotting.plot_fit(obs, obs_err, photbands, pars=pars, constraints=constraints)
+      if plotpath:
+         pl.savefig(plotpath + '/sed_fit.png')
+      
+      
+      data = samples[['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2']]
+      fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
+                       labels = data.dtype.names,
+                       quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
+                       levels=[0.393, 0.865, 0.95],
+                       show_titles=True, title_kwargs={"fontsize": 12})
+      if plotpath:
+         pl.savefig(plotpath + '/distribution_primary.png')
+      
+      data = samples[['mass', 'L', 'mass2', 'L2', 'q', 'd']]
+      fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
+                     labels = data.dtype.names,
+                     quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
+                     levels=[0.393, 0.865, 0.95],
+                     show_titles=True, title_kwargs={"fontsize": 12})
+      if plotpath:
+         pl.savefig(plotpath + '/distribution_derived.png')
+      
+      pl.show()

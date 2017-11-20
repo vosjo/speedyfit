@@ -25,7 +25,10 @@ def lnlike(theta, derived_properties, y, yerr, **kwargs):
    pars = {}
    for name, value in zip(kwargs['pnames'], theta):
       pars[name]=value
-   
+   if 'rad' in derived_properties:
+      pars['rad']=derived_properties['rad']
+   if 'rad2' in derived_properties:
+      pars['rad2']=derived_properties['rad2']
    
    #-- calculate synthetic magnitudes **kwargs contains infor about which grid to use
    kwargs.update(pars)
@@ -129,7 +132,7 @@ def MCMC(obs, obs_err, photbands,
              'grid':grids, 
              'constraints':constraints, 
              'derived_limits':derived_limits,
-             'prop_func':statfunc.get_derived_properties_binary}
+             'prop_func':statfunc.get_derived_properties}
    
    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=a, 
                                    args=(obs, obs_err, limits), kwargs=kwargs)
@@ -164,11 +167,6 @@ def MCMC(obs, obs_err, photbands,
    samples = samples[accept]
    blobs = blobs[accept]
    
-   #-- calculate results
-   pc  = np.percentile(samples, percentiles, axis=0)
-   results = [(v, e1, e2) for v, e1, e2 in zip(pc[1], pc[1]-pc[0], pc[2]-pc[1])]
-   results = np.array(results)
-   
    #-- convert to recarrays
    dtypes = [(n, 'f8') for n in pnames]
    samples = np.array([tuple(s) for s in samples], dtype=dtypes)
@@ -187,7 +185,14 @@ def MCMC(obs, obs_err, photbands,
    samples = samples[accept]
    blobs = blobs[accept]
    
-   return results, merge_arrays((samples, blobs), asrecarray=True, flatten=True)
+   #-- merge all results in 1 recarray and calculate the percentiles
+   data = merge_arrays((samples, blobs), asrecarray=True, flatten=True)
+   pc  = np.percentile(data.view(np.float64).reshape(data.shape + (-1,)), percentiles, axis=0)
+   results = [(v, e1, e2) for v, e1, e2 in zip(pc[1], pc[1]-pc[0], pc[2]-pc[1])]
+   results = np.array(results)
+   
+   
+   return results, data
    
    
 

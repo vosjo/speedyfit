@@ -30,26 +30,33 @@ def get_derived_properties(theta, pnames):
       mass = 10**theta[pnames.index('logg2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
       derived_properties['mass2'] = mass / Msol
    
+   #-- derive radii
+   if 'mass' in pnames and 'logg' in pnames:
+      rad = np.sqrt(GG * theta[pnames.index('mass')] * Msol/ 10**theta[pnames.index('logg')])
+      derived_properties['rad'] = rad / Rsol
+      
+   if 'mass2' in pnames and 'logg2' in pnames:
+      rad = np.sqrt(GG * theta[pnames.index('mass2')] * Msol / 10**theta[pnames.index('logg2')])
+      derived_properties['rad2'] = rad / Rsol
+   
    #-- derive mass ratio
    if 'rad' in pnames and 'logg' in pnames and 'rad2' in pnames and 'logg2' in pnames:
       m1 = ( theta[pnames.index('rad')]**2 * 10**theta[pnames.index('logg')] )
       m2 = ( theta[pnames.index('rad2')]**2 * 10**theta[pnames.index('logg2')] )
       derived_properties['q'] = m1 / m2
       
-   if 'rad1' in pnames and 'logg1' in pnames and 'rad2' in pnames and 'logg2' in pnames:
-      m1 = ( theta[pnames.index('rad1')]**2 * 10**theta[pnames.index('logg1')] )
-      m2 = ( theta[pnames.index('rad2')]**2 * 10**theta[pnames.index('logg2')] )
-      derived_properties['q'] = m1 / m2
-   
+   if 'mass' in pnames and 'mass2' in pnames:
+      derived_properties['q'] = theta[pnames.index('mass')] / theta[pnames.index('mass2')]
+      
    #-- derive luminosity ratio
    if 'rad' in pnames and 'teff' in pnames and 'rad2' in pnames and 'teff2' in pnames:
       l1 = ( theta[pnames.index('rad')]**2 * theta[pnames.index('teff')]**4 )
       l2 = ( theta[pnames.index('rad2')]**2 * theta[pnames.index('teff2')]**4 )
       derived_properties['lr'] = l1 / l2
       
-   if 'rad1' in pnames and 'teff1' in pnames and 'rad2' in pnames and 'teff2' in pnames:
-      l1 = ( theta[pnames.index('rad1')]**2 * theta[pnames.index('teff1')]**4 )
-      l2 = ( theta[pnames.index('rad2')]**2 * theta[pnames.index('teff2')]**4 )
+   if 'mass' in pnames and 'teff' in pnames and 'mass2' in pnames and 'teff2' in pnames:
+      l1 = ( derived_properties['rad']**2 * theta[pnames.index('teff')]**4 )
+      l2 = ( derived_properties['rad2']**2 * theta[pnames.index('teff2')]**4 )
       derived_properties['lr'] = l1 / l2
    
    #-- add empty values for luminosity and distance to prevent problems with 
