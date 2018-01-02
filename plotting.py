@@ -233,13 +233,13 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
       
       pl.errorbar(x, y, yerr=yerr, ls='', marker='o')
    
-   pl.axhline(y=0, color='k', ls='--')
-   
-   ax.yaxis.tick_right()
-   ax.xaxis.tick_bottom()
-   ax.yaxis.set_label_position('right') 
-   
-   pl.ylabel('(O-C) / O')
-   pl.xlim([-x[-1]*0.1, x[-1]*1.1])
-   pl.xticks(x, xticknames)
+      pl.axhline(y=0, color='k', ls='--')
+      
+      ax.yaxis.tick_right()
+      ax.xaxis.tick_bottom()
+      ax.yaxis.set_label_position('right') 
+      
+      pl.ylabel('(O-C) / O')
+      pl.xlim([-x[-1]*0.1, x[-1]*1.1])
+      pl.xticks(x, xticknames)
    
