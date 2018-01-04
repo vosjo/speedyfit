@@ -145,8 +145,10 @@ if __name__=="__main__":
       if plotpath:
          pl.savefig(plotpath + '/sed_fit.png')
       
-      
-      data = samples[['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2']]
+      if 'teff2' in samples.dtype.names:
+         data = samples[['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2']]
+      else:
+         data = samples[['teff', 'logg', 'rad', 'mass', 'L', 'd']]
       fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
                        labels = data.dtype.names,
                        quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
@@ -155,13 +157,14 @@ if __name__=="__main__":
       if plotpath:
          pl.savefig(plotpath + '/distribution_primary.png')
       
-      data = samples[['mass', 'L', 'mass2', 'L2', 'q', 'd']]
-      fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
-                     labels = data.dtype.names,
-                     quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
-                     levels=[0.393, 0.865, 0.95],
-                     show_titles=True, title_kwargs={"fontsize": 12})
-      if plotpath:
-         pl.savefig(plotpath + '/distribution_derived.png')
+      if 'mass2' in samples.dtype.names:
+         data = samples[['mass', 'L', 'mass2', 'L2', 'q', 'd']]
+         fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
+                        labels = data.dtype.names,
+                        quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
+                        levels=[0.393, 0.865, 0.95],
+                        show_titles=True, title_kwargs={"fontsize": 12})
+         if plotpath:
+            pl.savefig(plotpath + '/distribution_derived.png')
       
       pl.show()
