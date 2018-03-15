@@ -40,10 +40,14 @@ def prepare_grid(photbands, gridfilename,
    axis_values, pixelgrid = interpol.create_pixeltypegrid(grid_pars,flux.T)
    return axis_values,grid_pars.T,pixelgrid,grid_names
 
-def get_itable_single(teff=None, logg=None, ebv=None, **kwargs):
+def get_itable_single(teff=None, logg=None, g=None, ebv=0.0, **kwargs):
    
    #-- get the grid
    axis_values, pixelgrid = kwargs['grid']
+   
+   #-- check if logg or g is given
+   if logg is None and not g is None:
+      logg = np.log10(g)
    
    multiple = False
    if not hasattr(teff, '__iter__') or not hasattr(logg, '__iter__') or \
@@ -77,8 +81,8 @@ def get_itable(grid=[], **kwargs):
    
    values, parameters, components = {}, set(), set()
    for key in kwargs.keys():
-      if re.search("^(teff|logg|ebv|rad)\d?$", key):
-         par, comp = re.findall("^(teff|logg|ebv|rad)(\d?)$", key)[0]
+      if re.search("^(teff|logg|g|ebv|rad)\d?$", key):
+         par, comp = re.findall("^(teff|logg|g|ebv|rad)(\d?)$", key)[0]
          values[key] = kwargs.pop(key)
          parameters.add(par)
          components.add(comp)

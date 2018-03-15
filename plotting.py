@@ -83,8 +83,8 @@ def plot_distribution_density(data, xpar, ypar, percentiles=[16, 50, 84]):
  
 def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
    
-   grid1 = dict(grid='kuruczsdb', z=0, Rv=3.1)
-   grid2 = dict(grid='tmapsdb', z=0, Rv=3.1)
+   grid1 = dict(grid='kurucz2', z=0, Rv=3.1)
+   grid2 = dict(grid='tmap', z=0, Rv=3.1)
    model.set_defaults_multiple(grid1,grid2)
    
    
@@ -105,7 +105,9 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
       ipars = pars.copy()
       for key, value in pars.items():
          ipars[key] = [value]
-         
+      
+      print ipars
+      
       syn, Labs = model.get_itable_pix(photbands=photbands, **ipars)
       syn = syn[:,0]
       
@@ -184,29 +186,31 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
    #====================================
    ax = pl.subplot2grid((3,3), (0, 2), colspan=1, rowspan=2)
    
-   y = np.array(range(len(obs[colors])))
-   x = obs[colors] - syn[colors]
-   x_err = obs_err[colors]
-   oc_sys = psystems[colors]
+   if len(obs[colors]) > 0:
    
-   for system in all_systems:
-      s = np.where(oc_sys == system)
-      if len(x[s]) == 0: continue
-   
-      pl.errorbar(x[s], y[s], xerr=x_err[s], ls='', marker='o',
-                  color=system_colors[system])
-   
-   pl.axvline(x=0, color='k', ls='--')
-   
-   yticknames = [b.split('.')[1] for b in photbands[colors]]
-   pl.yticks(y, yticknames)
-   pl.ylim([-y[-1]*0.1, y[-1]*1.1])
-   
-   ax.yaxis.tick_right()
-   ax.xaxis.tick_top()
-   ax.xaxis.set_label_position('top') 
-   
-   pl.xlabel('O-C')
+      y = np.array(range(len(obs[colors])))
+      x = obs[colors] - syn[colors]
+      x_err = obs_err[colors]
+      oc_sys = psystems[colors]
+      
+      for system in all_systems:
+         s = np.where(oc_sys == system)
+         if len(x[s]) == 0: continue
+      
+         pl.errorbar(x[s], y[s], xerr=x_err[s], ls='', marker='o',
+                     color=system_colors[system])
+      
+      pl.axvline(x=0, color='k', ls='--')
+      
+      yticknames = [b.split('.')[1] for b in photbands[colors]]
+      pl.yticks(y, yticknames)
+      pl.ylim([-y[-1]*0.1, y[-1]*1.1])
+      
+      ax.yaxis.tick_right()
+      ax.xaxis.tick_top()
+      ax.xaxis.set_label_position('top') 
+      
+      pl.xlabel('O-C')
    
    
    # plot fractional O-C of the constraints

@@ -30,7 +30,7 @@ def lnlike(theta, derived_properties, y, yerr, **kwargs):
    if 'rad2' in derived_properties:
       pars['rad2']=derived_properties['rad2']
    
-   #-- calculate synthetic magnitudes **kwargs contains infor about which grid to use
+   #-- calculate synthetic msamagnitudes **kwargs contains infor about which grid to use
    kwargs.update(pars)
    y_syn, extra_drv = model_func(**kwargs)
    
@@ -134,7 +134,7 @@ def MCMC(obs, obs_err, photbands,
              'derived_limits':derived_limits,
              'prop_func':statfunc.get_derived_properties}
    
-   sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=a, 
+   sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=10, 
                                    args=(obs, obs_err, limits), kwargs=kwargs)
    
    #================
@@ -147,6 +147,9 @@ def MCMC(obs, obs_err, photbands,
          print("{0:5.1%}".format(float(i) / nrelax))
    pos = result[0]
    
+   #sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=2, 
+                                   #args=(obs, obs_err, limits), kwargs=kwargs)
+   
    print "\nRun"
    #-- run the sampler
    for i, result in enumerate(sampler.sample(pos, iterations=nsteps)):
@@ -154,7 +157,7 @@ def MCMC(obs, obs_err, photbands,
          print("{0:5.1%}".format(float(i) / nsteps))
    
    
-   #-- remove first nrelax steps and combine the results from the individual walkers 
+   #-- combine the results from the individual walkers 
    samples = sampler.flatchain
    blobs = np.array(sampler.blobs).flatten()
    probabilities = sampler.flatlnprobability
@@ -174,8 +177,6 @@ def MCMC(obs, obs_err, photbands,
    names = blobs[0].keys()
    pars = []
    for b in blobs:
-      if len(b.keys()) < 7:
-         print 'err', b
       pars.append(tuple([b[n] for n in names]))
    dtypes = [(n, 'f8') for n in names]
    blobs = np.array(pars, dtype=dtypes)

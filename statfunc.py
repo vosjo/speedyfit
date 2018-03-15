@@ -25,25 +25,39 @@ def get_derived_properties(theta, pnames):
    if 'rad' in pnames and 'logg' in pnames:
       mass = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
       derived_properties['mass'] = mass / Msol
-      
+   
+   if 'rad' in pnames and 'g' in pnames:
+      mass = theta[pnames.index('g')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+      derived_properties['mass'] = mass / Msol
+   
    if 'rad2' in pnames and 'logg2' in pnames:
       mass = 10**theta[pnames.index('logg2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
       derived_properties['mass2'] = mass / Msol
+      
+   if 'rad2' in pnames and 'g2' in pnames:
+      mass = theta[pnames.index('g2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
+      derived_properties['mass2'] = mass / Msol  
    
    #-- derive radii
    if 'mass' in pnames and 'logg' in pnames:
-      rad = np.sqrt(GG * theta[pnames.index('mass')] * Msol/ 10**theta[pnames.index('logg')])
+      rad = np.sqrt(GG * theta[pnames.index('mass')] * Msol / 10**theta[pnames.index('logg')])
+      derived_properties['rad'] = rad / Rsol
+      
+   if 'mass' in pnames and 'g' in pnames:
+      rad = np.sqrt(GG * theta[pnames.index('mass')] * Msol / theta[pnames.index('g')])
       derived_properties['rad'] = rad / Rsol
       
    if 'mass2' in pnames and 'logg2' in pnames:
       rad = np.sqrt(GG * theta[pnames.index('mass2')] * Msol / 10**theta[pnames.index('logg2')])
       derived_properties['rad2'] = rad / Rsol
+      
+   if 'mass2' in pnames and 'g2' in pnames:
+      rad = np.sqrt(GG * theta[pnames.index('mass2')] * Msol / theta[pnames.index('g2')])
+      derived_properties['rad2'] = rad / Rsol
    
    #-- derive mass ratio
-   if 'rad' in pnames and 'logg' in pnames and 'rad2' in pnames and 'logg2' in pnames:
-      m1 = ( theta[pnames.index('rad')]**2 * 10**theta[pnames.index('logg')] )
-      m2 = ( theta[pnames.index('rad2')]**2 * 10**theta[pnames.index('logg2')] )
-      derived_properties['q'] = m1 / m2
+   if 'mass' in derived_properties and 'mass2' in derived_properties:
+      derived_properties['q'] = derived_properties['mass'] / derived_properties['mass2']
       
    if 'mass' in pnames and 'mass2' in pnames:
       derived_properties['q'] = theta[pnames.index('mass')] / theta[pnames.index('mass2')]
@@ -87,10 +101,16 @@ def get_derived_properties_binary(theta, pnames):
    Msol = 1.988547e+33
    
    #-- derive masses
-   m1 = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+   if 'g' in pnames:
+      m1 = theta[pnames.index('g')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+   else:   
+      m1 = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
    derived_properties['mass'] = m1 / Msol
-      
-   m2 = 10**theta[pnames.index('logg2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
+   
+   if 'g2' in pnames:
+      m2 = theta[pnames.index('g2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
+   else:
+      m2 = 10**theta[pnames.index('logg2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
    derived_properties['mass2'] = m2 / Msol
    
    #-- derive mass ratio
@@ -128,7 +148,10 @@ def get_derived_properties_single(theta, pnames):
    Msol = 1.988547e+33
    
    #-- derive masses
-   mass = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+   if 'g' in pnames:
+      mass = theta[pnames.index('g')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+   else:
+      mass = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
    derived_properties['mass'] = mass / Msol
    
    #-- add empty values for luminosity and distance to prevent problems with 
@@ -170,7 +193,9 @@ def stat_chi2(meas, e_meas, colors, syn, **kwargs):
       ratio = (meas/syn)[~colors]
       weights = (meas/e_meas)[~colors]
       #-- weighted average and standard deviation
-      scale = np.average(ratio,weights=weights)
+      scale = np.average(ratio)
+      #scale = np.average(ratio,weights=weights)
+      
       e_scale = np.sqrt(np.dot(weights, (ratio-scale)**2)/weights.sum())
    else:
       scale,e_scale = 0,0
@@ -186,8 +211,8 @@ def stat_chi2(meas, e_meas, colors, syn, **kwargs):
    #-- Chi2 of the distance measurement
    #   this can only be done if absolute fluxes are included in the fit.
    if 'distance' in kwargs and sum(~colors) > 0:
-      syn_scale = 1/kwargs['distance'][0]**2
-      syn_scale_e = 2. / kwargs['distance'][0]**3 * kwargs['distance'][1]
+      syn_scale = 1./kwargs['distance'][0]**2
+      syn_scale_e = 2. * kwargs['distance'][1] / kwargs['distance'][0]**3 
       
       chi2_d = (scale - syn_scale)**2 / syn_scale_e**2
       
@@ -205,7 +230,6 @@ def stat_chi2(meas, e_meas, colors, syn, **kwargs):
       
       # append to chisq array
       chisq = np.append(chisq, chi2_q)
-   
    
    return chisq.sum(axis=0), scale, e_scale
   
