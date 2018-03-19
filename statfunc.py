@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def get_derived_properties(theta, pnames):
+def get_derived_properties(pars):
    """
    Function that will derive several properties based on the chosen models
    
@@ -22,64 +22,143 @@ def get_derived_properties(theta, pnames):
    Msol = 1.988547e+33
    
    #-- derive masses
-   if 'rad' in pnames and 'logg' in pnames:
-      mass = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+   if 'rad' in pars and 'logg' in pars:
+      mass = 10**pars['logg'] * (pars['rad'] * Rsol)**2 / GG
       derived_properties['mass'] = mass / Msol
    
-   if 'rad' in pnames and 'g' in pnames:
-      mass = theta[pnames.index('g')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+   if 'rad' in pars and 'g' in pars:
+      mass = pars['g'] * (pars['rad'] * Rsol)**2 / GG
       derived_properties['mass'] = mass / Msol
    
-   if 'rad2' in pnames and 'logg2' in pnames:
-      mass = 10**theta[pnames.index('logg2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
+   if 'rad2' in pars and 'logg2' in pars:
+      mass = 10**pars['logg2'] * (pars['rad2'] * Rsol)**2 / GG
       derived_properties['mass2'] = mass / Msol
       
-   if 'rad2' in pnames and 'g2' in pnames:
-      mass = theta[pnames.index('g2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
+   if 'rad2' in pars and 'g2' in pars:
+      mass = pars['g2'] * (pars['rad2'] * Rsol)**2 / GG
       derived_properties['mass2'] = mass / Msol  
    
    #-- derive radii
-   if 'mass' in pnames and 'logg' in pnames:
-      rad = np.sqrt(GG * theta[pnames.index('mass')] * Msol / 10**theta[pnames.index('logg')])
+   if 'mass' in pars and 'logg' in pars:
+      rad = np.sqrt(GG * pars['mass'] * Msol / 10**pars['logg'])
       derived_properties['rad'] = rad / Rsol
       
-   if 'mass' in pnames and 'g' in pnames:
-      rad = np.sqrt(GG * theta[pnames.index('mass')] * Msol / theta[pnames.index('g')])
+   if 'mass' in pars and 'g' in pars:
+      rad = np.sqrt(GG * pars['mass'] * Msol / pars['g'])
       derived_properties['rad'] = rad / Rsol
       
-   if 'mass2' in pnames and 'logg2' in pnames:
-      rad = np.sqrt(GG * theta[pnames.index('mass2')] * Msol / 10**theta[pnames.index('logg2')])
+   if 'mass2' in pars and 'logg2' in pars:
+      rad = np.sqrt(GG * pars['mass2'] * Msol / 10**pars['logg2'])
       derived_properties['rad2'] = rad / Rsol
       
-   if 'mass2' in pnames and 'g2' in pnames:
-      rad = np.sqrt(GG * theta[pnames.index('mass2')] * Msol / theta[pnames.index('g2')])
+   if 'mass2' in pars and 'g2' in pars:
+      rad = np.sqrt(GG * pars['mass2'] * Msol / pars['g2'])
       derived_properties['rad2'] = rad / Rsol
    
    #-- derive mass ratio
    if 'mass' in derived_properties and 'mass2' in derived_properties:
       derived_properties['q'] = derived_properties['mass'] / derived_properties['mass2']
       
-   if 'mass' in pnames and 'mass2' in pnames:
-      derived_properties['q'] = theta[pnames.index('mass')] / theta[pnames.index('mass2')]
+   if 'mass' in pars and 'mass2' in pars:
+      derived_properties['q'] = pars['mass'] / pars['mass2']
       
    #-- derive luminosity ratio
-   if 'rad' in pnames and 'teff' in pnames and 'rad2' in pnames and 'teff2' in pnames:
-      l1 = ( theta[pnames.index('rad')]**2 * theta[pnames.index('teff')]**4 )
-      l2 = ( theta[pnames.index('rad2')]**2 * theta[pnames.index('teff2')]**4 )
+   if 'rad' in pars and 'teff' in pars and 'rad2' in pars and 'teff2' in pars:
+      l1 = ( pars['rad']**2 * pars['teff']**4 )
+      l2 = ( pars['rad2']**2 * pars['teff2']**4 )
       derived_properties['lr'] = l1 / l2
       
-   if 'mass' in pnames and 'teff' in pnames and 'mass2' in pnames and 'teff2' in pnames:
-      l1 = ( derived_properties['rad']**2 * theta[pnames.index('teff')]**4 )
-      l2 = ( derived_properties['rad2']**2 * theta[pnames.index('teff2')]**4 )
+   if 'mass' in pars and 'teff' in pars and 'mass2' in pars and 'teff2' in pars:
+      l1 = ( derived_properties['rad']**2 * pars['teff']**4 )
+      l2 = ( derived_properties['rad2']**2 * pars['teff2']**4 )
       derived_properties['lr'] = l1 / l2
    
    #-- add empty values for luminosity and distance to prevent problems with 
    #   failed models
    derived_properties.update({'d':0, 'L':0})
-   if 'rad2' in pnames:
+   if 'rad2' in pars:
       derived_properties['L2'] = 0
    
    return derived_properties
+
+#def get_derived_properties(theta, pnames):
+   #"""
+   #Function that will derive several properties based on the chosen models
+   
+   #Currently the following properties are calculated:
+   #- mass
+   #- mass1
+   #- mass2
+   #- q
+   
+   #returns dictionary of all properties that could be calculated.
+   #"""
+   
+   #derived_properties = {}
+   
+   #GG = 6.67384e-08
+   #Rsol = 69550800000.0
+   #Msol = 1.988547e+33
+   
+   ##-- derive masses
+   #if 'rad' in pnames and 'logg' in pnames:
+      #mass = 10**theta[pnames.index('logg')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+      #derived_properties['mass'] = mass / Msol
+   
+   #if 'rad' in pnames and 'g' in pnames:
+      #mass = theta[pnames.index('g')] * (theta[pnames.index('rad')] * Rsol)**2 / GG
+      #derived_properties['mass'] = mass / Msol
+   
+   #if 'rad2' in pnames and 'logg2' in pnames:
+      #mass = 10**theta[pnames.index('logg2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
+      #derived_properties['mass2'] = mass / Msol
+      
+   #if 'rad2' in pnames and 'g2' in pnames:
+      #mass = theta[pnames.index('g2')] * (theta[pnames.index('rad2')] * Rsol)**2 / GG
+      #derived_properties['mass2'] = mass / Msol  
+   
+   ##-- derive radii
+   #if 'mass' in pnames and 'logg' in pnames:
+      #rad = np.sqrt(GG * theta[pnames.index('mass')] * Msol / 10**theta[pnames.index('logg')])
+      #derived_properties['rad'] = rad / Rsol
+      
+   #if 'mass' in pnames and 'g' in pnames:
+      #rad = np.sqrt(GG * theta[pnames.index('mass')] * Msol / theta[pnames.index('g')])
+      #derived_properties['rad'] = rad / Rsol
+      
+   #if 'mass2' in pnames and 'logg2' in pnames:
+      #rad = np.sqrt(GG * theta[pnames.index('mass2')] * Msol / 10**theta[pnames.index('logg2')])
+      #derived_properties['rad2'] = rad / Rsol
+      
+   #if 'mass2' in pnames and 'g2' in pnames:
+      #rad = np.sqrt(GG * theta[pnames.index('mass2')] * Msol / theta[pnames.index('g2')])
+      #derived_properties['rad2'] = rad / Rsol
+   
+   ##-- derive mass ratio
+   #if 'mass' in derived_properties and 'mass2' in derived_properties:
+      #derived_properties['q'] = derived_properties['mass'] / derived_properties['mass2']
+      
+   #if 'mass' in pnames and 'mass2' in pnames:
+      #derived_properties['q'] = theta[pnames.index('mass')] / theta[pnames.index('mass2')]
+      
+   ##-- derive luminosity ratio
+   #if 'rad' in pnames and 'teff' in pnames and 'rad2' in pnames and 'teff2' in pnames:
+      #l1 = ( theta[pnames.index('rad')]**2 * theta[pnames.index('teff')]**4 )
+      #l2 = ( theta[pnames.index('rad2')]**2 * theta[pnames.index('teff2')]**4 )
+      #derived_properties['lr'] = l1 / l2
+      
+   #if 'mass' in pnames and 'teff' in pnames and 'mass2' in pnames and 'teff2' in pnames:
+      #l1 = ( derived_properties['rad']**2 * theta[pnames.index('teff')]**4 )
+      #l2 = ( derived_properties['rad2']**2 * theta[pnames.index('teff2')]**4 )
+      #derived_properties['lr'] = l1 / l2
+   
+   ##-- add empty values for luminosity and distance to prevent problems with 
+   ##   failed models
+   #derived_properties.update({'d':0, 'L':0})
+   #if 'rad2' in pnames:
+      #derived_properties['L2'] = 0
+   
+   #return derived_properties
 
 def get_derived_properties_binary(theta, pnames):
    """

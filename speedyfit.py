@@ -109,17 +109,10 @@ if __name__=="__main__":
       axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, name,
             teffrange=limits[pnames.index('teff'+ind)],
             loggrange=limits[pnames.index('logg'+ind)],
-            ebvrange = [0, 0.02], #limits[pnames.index('ebv')],
+            ebvrange =limits[pnames.index('ebv')],
             variables=['teff','logg','ebv'])
 
       grids.append([axis_values, pixelgrid])
-   
-   #-- pars mcmc setup
-   nwalkers = setup.get('nwalkers', 100)
-   nsteps = setup.get('nsteps', 2000)
-   nrelax = setup.get('nrelax', 500)
-   a = setup.get('a', 10)
-   
    
    #-- switch logg to g for a binary system
    if 'logg' in pnames:
@@ -130,32 +123,59 @@ if __name__=="__main__":
       limits[pnames.index('logg2')] = 10**limits[pnames.index('logg2')]
       pnames[pnames.index('logg2')] = 'g2'
    
+   
+   #-- check for variables that are kept fixed
+   fixed = np.where(limits[:,0] == limits[:,1])
+   varied = np.where(limits[:,0] != limits[:,1])
+   
+   pnames = np.array(pnames)
+   fixed_variables = {}
+   for par, val in zip(pnames[fixed], limits[:,0][fixed]):
+      fixed_variables[par] = val
+      
+   pnames = list(pnames[varied])
+   limits = limits[varied]
+   
+   #-- pars mcmc setup
+   nwalkers = setup.get('nwalkers', 100)
+   nsteps = setup.get('nsteps', 2000)
+   nrelax = setup.get('nrelax', 500)
+   a = setup.get('a', 10)
+   
+   
    #-- MCMC
    results, samples = mcmc.MCMC(obs, obs_err, photbands, 
                                  pnames, limits, grids, 
+                                 fixed_variables=fixed_variables,
                                  constraints=constraints, derived_limits=derived_limits,
                                  nwalkers=nwalkers, nsteps=nsteps, nrelax=nrelax,
                                  a=a, percentiles=[16, 50, 84])
    
+   #-- add fixed variables to results dictionary
+   results.update(fixed_variables)
+   
    #-- deal with the switch back to logg
    if 'g' in samples.dtype.names:
-      logg = np.log10(samples['g'])
+      samples = append_fields(samples, 'logg', np.log10(samples['g']), usemask=False)
       
-      samples = append_fields(samples, 'logg', logg, usemask=False)
-      
-      pc = np.percentile(logg, [16, 50, 84])
-      pc = np.array([pc[1], pc[1]-pc[0], pc[2]-pc[1]])
-      results = np.append(results.T, pc.reshape((-1,1)), 1).T
+   if 'g' in results:
+      results['logg'] = np.log10(results['g'])
       
    if 'g2' in samples.dtype.names:
-      logg = np.log10(samples['g2'])
+      samples = append_fields(samples, 'logg2', np.log10(samples['g2']), usemask=False)
       
-      samples = append_fields(samples, 'logg2', logg, usemask=False)
+   if 'g2' in results:
+      results['logg2'] = np.log10(results['g2'])
       
-      pc = np.percentile(logg, [16, 50, 84])
-      pc = np.array([pc[1], pc[1]-pc[0], pc[2]-pc[1]])
-      results = np.append(results.T, pc.reshape((-1,1)), 1).T
+   
+   print "Results:"
+   for p, v in results.items():
+      print p, v
       
+   pc  = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), [50], axis=0)[0]
+   print pc
+   for p, v in zip(samples.dtype.names, pc):
+      print p, v
    
    datafile = setup.get('datafile', None)
    if not datafile is None:
@@ -171,35 +191,55 @@ if __name__=="__main__":
    plotpath = setup.get('plotpath', None)
    if args.plot or not plotpath is None:
       
-      pars = {}
-      for par, v in zip(samples.dtype.names, results):
-         pars[par] = v[0]
+      #pars = {}
+      #for par, v in zip(samples.dtype.names, results):
+         #pars[par] = v[0]
          
       pl.figure(1)
-      plotting.plot_fit(obs, obs_err, photbands, pars=pars, constraints=constraints)
+      plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints)
       if plotpath:
          pl.savefig(plotpath + '/sed_fit.png')
       
-      if 'teff2' in samples.dtype.names:
-         data = samples[['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2']]
-      else:
-         data = samples[['teff', 'logg', 'rad', 'mass', 'L', 'd']]
-      fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
+      
+      if 'teff2' in samples.dtype.names or 'logg2' in samples.dtype.names or 'rad2' in samples.dtype.names:
+         pars1 = []
+         for p in ['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2']:
+            if p in samples.dtype.names: pars1.append(p)
+         
+         data = samples[pars1]
+         fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
                        labels = data.dtype.names,
                        quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
                        levels=[0.393, 0.865, 0.95],
                        show_titles=True, title_kwargs={"fontsize": 12})
-      if plotpath:
-         pl.savefig(plotpath + '/distribution_primary.png')
+         if plotpath:
+            pl.savefig(plotpath + '/distribution_primary.png')
+         
+         pars2 = []
+         for p in ['mass', 'L', 'mass2', 'L2', 'q', 'd']:
+            if p in samples.dtype.names: pars2.append(p)
       
-      if 'mass2' in samples.dtype.names:
-         data = samples[['mass', 'g', 'mass2', 'g2', 'q', 'd']]
+         data = samples[pars2]
          fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
-                        labels = data.dtype.names,
-                        quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
-                        levels=[0.393, 0.865, 0.95],
-                        show_titles=True, title_kwargs={"fontsize": 12})
+                       labels = data.dtype.names,
+                       quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
+                       levels=[0.393, 0.865, 0.95],
+                       show_titles=True, title_kwargs={"fontsize": 12})
          if plotpath:
             pl.savefig(plotpath + '/distribution_derived.png')
+      
+      else:
+         pars1 = []
+         for p in ['teff', 'logg', 'rad', 'mass', 'L', 'd']:
+            if p in samples.dtype.names: pars1.append(p)
+            
+         data = samples[pars1]
+         fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
+                       labels = data.dtype.names,
+                       quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
+                       levels=[0.393, 0.865, 0.95],
+                       show_titles=True, title_kwargs={"fontsize": 12})
+         if plotpath:
+            pl.savefig(plotpath + '/distribution_primary.png')
       
       pl.show()

@@ -8,7 +8,7 @@ import statfunc, model
 
 from ivs.io import ascii
  
-def lnlike(theta, derived_properties, y, yerr, **kwargs):
+def lnlike(pars, derived_properties, y, yerr, **kwargs):
    """
    log likelihood function
    
@@ -20,15 +20,6 @@ def lnlike(theta, derived_properties, y, yerr, **kwargs):
    colors = kwargs.get('colors', [False for i in y])
    constraints = kwargs.pop('constraints', {})
    
-   
-   #-- create keyword parameters from theta
-   pars = {}
-   for name, value in zip(kwargs['pnames'], theta):
-      pars[name]=value
-   if 'rad' in derived_properties:
-      pars['rad']=derived_properties['rad']
-   if 'rad2' in derived_properties:
-      pars['rad2']=derived_properties['rad2']
    
    #-- calculate synthetic msamagnitudes **kwargs contains infor about which grid to use
    kwargs.update(pars)
@@ -98,14 +89,31 @@ def lnprob(theta, y, yerr, limits, **kwargs):
    :return: the sum of the log prior and log likelihood
    :rtype: float
    """
-   prop_func = kwargs.pop('prop_func', statfunc.get_derived_properties)
-   syn_drv = prop_func(theta, kwargs['pnames'])
    
+   #-- create keyword parameters from theta
+   pars = {}
+   for name, value in zip(kwargs['pnames'], theta):
+      pars[name]=value
+   
+   #-- add extra variables which are not fitted to pars.
+   pars.update(kwargs.pop('fixed_variables', {}))
+   
+   #-- get derived properties
+   prop_func = kwargs.pop('prop_func', statfunc.get_derived_properties)
+   syn_drv = prop_func(pars)
+   
+   if 'rad' in syn_drv:
+      pars['rad']=syn_drv['rad']
+   if 'rad2' in syn_drv:
+      pars['rad2']=syn_drv['rad2']
+   
+   #-- calculate prior probability
    lp = lnprior(theta, syn_drv, limits, **kwargs)
    if not np.isfinite(lp):
       return -np.inf, syn_drv
    
-   ll, extra_drv = lnlike(theta, syn_drv, y, yerr, **kwargs)
+   #-- calculate likelihood
+   ll, extra_drv = lnlike(pars, syn_drv, y, yerr, **kwargs)
    syn_drv.update(extra_drv)
    if not np.isfinite(ll):
       return -np.inf, syn_drv
@@ -115,7 +123,7 @@ def lnprob(theta, y, yerr, limits, **kwargs):
 
 def MCMC(obs, obs_err, photbands, 
          pnames, limits, grids, 
-         constraints={}, derived_limits={},
+         fixed_variables={}, constraints={}, derived_limits={},
          nwalkers=100, nsteps=1000, nrelax=150, a=15, percentiles=[16, 50, 84]):
    
    #-- check which bands are colors
@@ -130,6 +138,7 @@ def MCMC(obs, obs_err, photbands,
    kwargs = {'pnames':pnames, 
              'colors':colors, 
              'grid':grids, 
+             'fixed_variables':fixed_variables,
              'constraints':constraints, 
              'derived_limits':derived_limits,
              'prop_func':statfunc.get_derived_properties}
@@ -169,6 +178,7 @@ def MCMC(obs, obs_err, photbands,
    accept = np.where(np.isfinite(probabilities))
    samples = samples[accept]
    blobs = blobs[accept]
+   probabilities = probabilities[accept]
    
    #-- convert to recarrays
    dtypes = [(n, 'f8') for n in pnames]
@@ -185,12 +195,24 @@ def MCMC(obs, obs_err, photbands,
    accept = np.where(blobs['d'] > 0)
    samples = samples[accept]
    blobs = blobs[accept]
+   probabilities = probabilities[accept]
    
-   #-- merge all results in 1 recarray and calculate the percentiles
+   #-- merge all results in 1 recarray and select best model
    data = merge_arrays((samples, blobs), asrecarray=True, flatten=True)
-   pc  = np.percentile(data.view(np.float64).reshape(data.shape + (-1,)), percentiles, axis=0)
-   results = [(v, e1, e2) for v, e1, e2 in zip(pc[1], pc[1]-pc[0], pc[2]-pc[1])]
-   results = np.array(results)
+   best = np.where(probabilities == np.max(probabilities))
+   
+   print np.max(probabilities)
+   print data[best]
+   
+   results = {}
+   for n, v in zip(data.dtype.names, data[best][0]):
+      results[n] = v
+   
+   ##-- merge all results in 1 recarray and calculate the percentiles
+   #data = merge_arrays((samples, blobs), asrecarray=True, flatten=True)
+   #pc  = np.percentile(data.view(np.float64).reshape(data.shape + (-1,)), percentiles, axis=0)
+   #results = [(v, e1, e2) for v, e1, e2 in zip(pc[1], pc[1]-pc[0], pc[2]-pc[1])]
+   #results = np.array(results)
    
    
    return results, data

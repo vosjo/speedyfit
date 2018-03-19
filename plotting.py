@@ -83,6 +83,8 @@ def plot_distribution_density(data, xpar, ypar, percentiles=[16, 50, 84]):
  
 def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
    
+   print pars
+   
    grid1 = dict(grid='kurucz2', z=0, Rv=3.1)
    grid2 = dict(grid='tmap', z=0, Rv=3.1)
    model.set_defaults_multiple(grid1,grid2)
@@ -225,7 +227,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
          pnames.append(n)
          theta.append(v)
       
-      derived_properties = statfunc.get_derived_properties(theta, pnames)
+      derived_properties = statfunc.get_derived_properties(pars)
       derived_properties['distance'] = np.sqrt(1/scale) 
       
       x = range(len(constraints.keys()))
