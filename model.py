@@ -21,11 +21,17 @@ def prepare_grid(photbands, gridfilename,
       #-- make an alias for further reference
       ext = ff[1]
       
-      #-- the grid is already cut there to limit memory usage
+      #-- the grid is already cut here to limit memory usage
       keep = np.ones(len(ext.data),bool)
       for name in variables:
-         #-- we need to be carefull for rounding errors
+         #-- first find the closest actuall grid points
          low,high = locals()[name+'range']
+         lidx = np.abs(ext.data.field(name)[ext.data.field(name) <= low]-low).argmin()
+         hidx = np.abs(ext.data.field(name)[ext.data.field(name) >= high]-high).argmin()
+         low = ext.data.field(name)[ext.data.field(name) <= low][lidx]
+         high = ext.data.field(name)[ext.data.field(name) >= high][hidx]
+         
+         #-- we need to be carefull for rounding errors
          in_range = (low<=ext.data.field(name)) & (ext.data.field(name)<=high)
          on_edge  = np.allclose(ext.data.field(name),low) | np.allclose(ext.data.field(name),high)
          
