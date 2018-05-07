@@ -48,23 +48,30 @@ nrelax: 500      # burn-in steps taken by each walker
 a: 10            # relative size of the steps taken
 # output options
 datafile: none   # filepath to write results of all walkers
-plotpath: none   # filepath to save plots with results
+plot1:
+ type: sed_fit
+ path: sed_fit.png
+plot2:
+ type: distribution
+ path: distribution_primary.png
+ parameters: ['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2']
+plot3:
+ type: distribution
+ path: distribution_derived.png
+ parameters: ['mass', 'L', 'mass2', 'L2', 'q', 'd']
 """
 
 if __name__=="__main__":
 
    parser = argparse.ArgumentParser()
-   parser.add_argument("-f", type=str, dest='filename', default=None,
-                       help="use setup given in filename")
-   parser.add_argument("-empty", type=str, dest='empty', default=None,
+   parser.add_argument('filename', action="store", type=str, help='use setup given in this file')
+   parser.add_argument("-empty", action='store_true', dest='empty',
                        help="When used, create an empty setup file with given filename")
-   parser.add_argument("-p", action='store_true', dest='plot', 
-                       help="Turn on plotting")
    args, variables = parser.parse_known_args()
    
-   if not args.empty is None:
+   if args.empty:
       
-      ofile = open(args.empty, 'w')
+      ofile = open(args.filename, 'w')
       ofile.write(default)
       ofile.close()
       
@@ -188,58 +195,37 @@ if __name__=="__main__":
       fileio.write2fits(samples, datafile, setup=setup_str)
    
    
-   plotpath = setup.get('plotpath', None)
-   if args.plot or not plotpath is None:
+   #-- Plotting 
+   
+   for i in range(10):
       
-      #pars = {}
-      #for par, v in zip(samples.dtype.names, results):
-         #pars[par] = v[0]
+      pindex = 'plot'+str(i)
+      if not pindex in setup: continue
+      
+      if setup[pindex]['type'] == 'sed_fit':
          
-      pl.figure(1)
-      plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints)
-      if plotpath:
-         pl.savefig(plotpath + '/sed_fit.png')
-      
-      
-      if 'teff2' in samples.dtype.names or 'logg2' in samples.dtype.names or 'rad2' in samples.dtype.names:
+         pl.figure(i)
+         plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints)
+         
+         if not setup[pindex].get('path', None) is None:
+            pl.savefig(setup[pindex].get('path', 'sed_fit.png'))
+   
+   
+      if setup[pindex]['type'] == 'distribution':
+         
          pars1 = []
-         for p in ['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2']:
+         for p in setup[pindex].get('parameters', ['teff', 'rad', 'L', 'd']):
             if p in samples.dtype.names: pars1.append(p)
          
          data = samples[pars1]
          fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
                        labels = data.dtype.names,
-                       quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
-                       levels=[0.393, 0.865, 0.95],
+                       quantiles=setup[pindex].get('quantiles', [0.025, 0.16, 0.5, 0.84, 0.975]),
+                       levels=setup[pindex].get('levels', [0.393, 0.865, 0.95]),
                        show_titles=True, title_kwargs={"fontsize": 12})
-         if plotpath:
-            pl.savefig(plotpath + '/distribution_primary.png')
          
-         pars2 = []
-         for p in ['mass', 'L', 'mass2', 'L2', 'q', 'd']:
-            if p in samples.dtype.names: pars2.append(p)
+         if not setup[pindex].get('path', None) is None:
+            pl.savefig(setup[pindex].get('path', 'distribution.png'))
+   
       
-         data = samples[pars2]
-         fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
-                       labels = data.dtype.names,
-                       quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
-                       levels=[0.393, 0.865, 0.95],
-                       show_titles=True, title_kwargs={"fontsize": 12})
-         if plotpath:
-            pl.savefig(plotpath + '/distribution_derived.png')
-      
-      else:
-         pars1 = []
-         for p in ['teff', 'logg', 'rad', 'mass', 'L', 'd']:
-            if p in samples.dtype.names: pars1.append(p)
-            
-         data = samples[pars1]
-         fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
-                       labels = data.dtype.names,
-                       quantiles=[0.025, 0.16, 0.5, 0.84, 0.975],
-                       levels=[0.393, 0.865, 0.95],
-                       show_titles=True, title_kwargs={"fontsize": 12})
-         if plotpath:
-            pl.savefig(plotpath + '/distribution_primary.png')
-      
-      pl.show()
+   pl.show()
