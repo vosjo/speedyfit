@@ -9,8 +9,24 @@ from scipy.stats import gaussian_kde
 from ivs.sed import filters, model
 
 import statfunc
- 
- 
+
+def format_parameter(name, value):
+   
+   temp = "{:7.3f}"
+   if 'teff' in name or name == 'd':
+      temp = "{:7.0f}"
+   
+   elif  'logg' in name or 'rad' in name or 'mass' in name or name=='L' or name == 'L2':
+      temp = "{:7.2f}"
+   
+   elif 'ebv' in name or 'q' in name:
+      temp = "{:7.3f}"
+   
+   if hasattr(value, '__iter__'):
+      return [temp.format(v) for v in value]
+   else:
+      return temp.format(value)
+   
 def plot_distribution(data, parameters=None, percentiles=[16, 50, 84]):
    """
    Plots a histogram of the requested parameters, or all parameters if none are given.
@@ -83,7 +99,7 @@ def plot_distribution_density(data, xpar, ypar, percentiles=[16, 50, 84]):
  
 def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
    
-   print pars
+   pars = pars.copy()
    
    grid1 = dict(grid='kurucz2', z=0, Rv=3.1)
    grid2 = dict(grid='tmap', z=0, Rv=3.1)
@@ -107,7 +123,8 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
    if not len(pars.keys()) == 0:
       ipars = pars.copy()
       for key, value in pars.items():
-         ipars[key] = [value]
+         ipars[key] = [value[0]]
+         pars[key] = value[0]
       
       print ipars
       

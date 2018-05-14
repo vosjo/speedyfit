@@ -167,22 +167,29 @@ if __name__=="__main__":
       
    if 'g' in results:
       results['logg'] = np.log10(results['g'])
+      results.pop('g')
       
    if 'g2' in samples.dtype.names:
       samples = append_fields(samples, 'logg2', np.log10(samples['g2']), usemask=False)
       
    if 'g2' in results:
       results['logg2'] = np.log10(results['g2'])
-      
+      results.pop('g2')
    
-   print "Results:"
-   for p, v in results.items():
-      print p, v
+   names = list(samples.dtype.names)
+   names.remove('g')
+   names.remove('g2')
+   samples = samples[names]
+   
+   print "Resulting parameter values and errors:"
       
-   pc  = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), [50], axis=0)[0]
-   print pc
-   for p, v in zip(samples.dtype.names, pc):
-      print p, v
+   pc  = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), [16, 50, 84], axis=0)
+   for p, v, e1, e2 in zip(samples.dtype.names, pc[1], pc[1]-pc[0], pc[2]-pc[1]):
+      results[p] = [results[p], v, e1, e2]
+      
+   print "   Par             Best        Pc       emin       emax"
+   for p in samples.dtype.names:
+      print "   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p]))
    
    datafile = setup.get('datafile', None)
    if not datafile is None:
@@ -222,6 +229,7 @@ if __name__=="__main__":
                        labels = data.dtype.names,
                        quantiles=setup[pindex].get('quantiles', [0.025, 0.16, 0.5, 0.84, 0.975]),
                        levels=setup[pindex].get('levels', [0.393, 0.865, 0.95]),
+                       truths=[results[p][0] for p in data.dtype.names],
                        show_titles=True, title_kwargs={"fontsize": 12})
          
          if not setup[pindex].get('path', None) is None:

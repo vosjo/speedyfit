@@ -201,9 +201,6 @@ def MCMC(obs, obs_err, photbands,
    data = merge_arrays((samples, blobs), asrecarray=True, flatten=True)
    best = np.where(probabilities == np.max(probabilities))
    
-   print np.max(probabilities)
-   print data[best]
-   
    results = {}
    for n, v in zip(data.dtype.names, data[best][0]):
       results[n] = v
