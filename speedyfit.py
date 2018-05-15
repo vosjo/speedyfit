@@ -247,7 +247,7 @@ if __name__=="__main__":
          
          data = samples[pars1]
          
-         if setup[pindex]['show_best']:
+         if setup[pindex].get('show_best', False):
             truths = [results[p][0] for p in data.dtype.names]
          else:
             truths = None
