@@ -46,6 +46,8 @@ nwalkers: 100    # total number of walkers
 nsteps: 2000     # steps taken by each walker (not including burn-in)
 nrelax: 500      # burn-in steps taken by each walker
 a: 10            # relative size of the steps taken
+# set the percentiles for the error determination 
+percentiles: [16, 50, 84] # 16 - 84 corresponds to 1 sigma
 # output options
 datafile: none   # filepath to write results of all walkers
 plot1:
@@ -148,6 +150,7 @@ if __name__=="__main__":
    nsteps = setup.get('nsteps', 2000)
    nrelax = setup.get('nrelax', 500)
    a = setup.get('a', 10)
+   percentiles = setup.get('percentiles', [16, 50, 84])
    
    
    #-- MCMC
@@ -156,7 +159,7 @@ if __name__=="__main__":
                                  fixed_variables=fixed_variables,
                                  constraints=constraints, derived_limits=derived_limits,
                                  nwalkers=nwalkers, nsteps=nsteps, nrelax=nrelax,
-                                 a=a, percentiles=[16, 50, 84])
+                                 a=a)
    
    #-- add fixed variables to results dictionary
    results.update(fixed_variables)
@@ -185,13 +188,27 @@ if __name__=="__main__":
    print ""
    print "Resulting parameter values and errors:"
       
-   pc  = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), [16, 50, 84], axis=0)
+   pc  = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), percentiles, axis=0)
    for p, v, e1, e2 in zip(samples.dtype.names, pc[1], pc[1]-pc[0], pc[2]-pc[1]):
       results[p] = [results[p], v, e1, e2]
       
    print "   Par             Best        Pc       emin       emax"
    for p in samples.dtype.names:
       print "   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p]))
+   
+   
+   out = ""
+   out += "{:0.0f}\t{:0.0f}\t".format(results['teff'][1], np.average([results['teff'][2],results['teff'][3]]))
+   for par in ['logg', 'L', 'rad']:
+      out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
+                                         np.average([results[par][2],results[par][3]]))
+   out += "{:0.0f}\t{:0.0f}\t".format(results['teff2'][1], np.average([results['teff2'][2],results['teff2'][3]]))
+   for par in ['logg2', 'L2', 'rad2']:
+      out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
+                                         np.average([results[par][2],results[par][3]]))
+   out += "{:0.0f}\t{:0.0f}\t".format(results['d'][1], np.average([results['d'][2],results['d'][3]]))
+   
+   print out
    
    datafile = setup.get('datafile', None)
    if not datafile is None:
@@ -213,8 +230,10 @@ if __name__=="__main__":
       
       if setup[pindex]['type'] == 'sed_fit':
          
+         res = setup[pindex].get('result', 'best')
+         
          pl.figure(i)
-         plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints)
+         plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints, result=res)
          
          if not setup[pindex].get('path', None) is None:
             pl.savefig(setup[pindex].get('path', 'sed_fit.png'))

@@ -97,9 +97,12 @@ def plot_distribution_density(data, xpar, ypar, percentiles=[16, 50, 84]):
    
    
  
-def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
+def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best'):
    
    pars = pars.copy()
+   
+   # use model from 'best' results or 'pc' results
+   resi = 0 if result == 'best' else 1
    
    grid1 = dict(grid='kurucz2', z=0, Rv=3.1)
    grid2 = dict(grid='tmap', z=0, Rv=3.1)
@@ -125,8 +128,8 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
    if not len(pars.keys()) == 0:
       ipars = pars.copy()
       for key, value in pars.items():
-         ipars[key] = [value[0]]
-         pars[key] = value[0]
+         ipars[key] = [value[resi]]
+         pars[key] = value[resi]
       
       print ipars
       
@@ -269,3 +272,4 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
       pl.xlim([-x[-1]*0.1, x[-1]*1.1])
       pl.xticks(x, xticknames)
    
+   pl.figtext(0.03, 0.96, 'model = {}'.format(result))

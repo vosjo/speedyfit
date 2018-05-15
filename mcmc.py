@@ -124,7 +124,7 @@ def lnprob(theta, y, yerr, limits, **kwargs):
 def MCMC(obs, obs_err, photbands, 
          pnames, limits, grids, 
          fixed_variables={}, constraints={}, derived_limits={},
-         nwalkers=100, nsteps=1000, nrelax=150, a=15, percentiles=[16, 50, 84]):
+         nwalkers=100, nsteps=1000, nrelax=150, a=10):
    
    #-- check which bands are colors
    colors = np.array([model.is_color(photband) for photband in photbands],bool)
@@ -204,12 +204,6 @@ def MCMC(obs, obs_err, photbands,
    results = {}
    for n, v in zip(data.dtype.names, data[best][0]):
       results[n] = v
-   
-   ##-- merge all results in 1 recarray and calculate the percentiles
-   #data = merge_arrays((samples, blobs), asrecarray=True, flatten=True)
-   #pc  = np.percentile(data.view(np.float64).reshape(data.shape + (-1,)), percentiles, axis=0)
-   #results = [(v, e1, e2) for v, e1, e2 in zip(pc[1], pc[1]-pc[0], pc[2]-pc[1])]
-   #results = np.array(results)
    
    
    return results, data
