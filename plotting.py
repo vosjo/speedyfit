@@ -106,6 +106,8 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}):
    #grid2 = dict(grid='wd_da', z=0, Rv=3.1)
    model.set_defaults_multiple(grid1,grid2)
    
+   model.set_defaults(**grid2)
+   
    
    colors = np.array([filters.is_color(p) for p in photbands])
    psystems = np.array([p.split('.')[0] for p in photbands])

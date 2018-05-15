@@ -177,10 +177,12 @@ if __name__=="__main__":
       results.pop('g2')
    
    names = list(samples.dtype.names)
-   names.remove('g')
-   names.remove('g2')
+   if 'g' in names: names.remove('g')
+   if 'g2' in names: names.remove('g2')
    samples = samples[names]
    
+   print "================================================================================"
+   print ""
    print "Resulting parameter values and errors:"
       
    pc  = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), [16, 50, 84], axis=0)
@@ -225,11 +227,18 @@ if __name__=="__main__":
             if p in samples.dtype.names: pars1.append(p)
          
          data = samples[pars1]
+         
+         if setup[pindex]['show_best']:
+            truths = [results[p][0] for p in data.dtype.names]
+         else:
+            truths = None
+         
+         
          fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
                        labels = data.dtype.names,
                        quantiles=setup[pindex].get('quantiles', [0.025, 0.16, 0.5, 0.84, 0.975]),
                        levels=setup[pindex].get('levels', [0.393, 0.865, 0.95]),
-                       truths=[results[p][0] for p in data.dtype.names],
+                       truths=truths,
                        show_titles=True, title_kwargs={"fontsize": 12})
          
          if not setup[pindex].get('path', None) is None:
