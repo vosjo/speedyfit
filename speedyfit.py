@@ -95,6 +95,11 @@ if __name__=="__main__":
    obs = np.array(data[setup['obs_index']], dtype=float)
    obs_err = np.array(data[setup['err_index']], dtype=float)
    
+   #-- remove colors
+   color = np.array([model.is_color(p) for p in photbands])
+   s = np.where(~color)
+   photbands, obs, obs_err = photbands[s], obs[s], obs_err[s]
+   
    #-- pars limits
    pnames = setup['pnames']
    limits = np.array(setup['limits'])
@@ -162,7 +167,8 @@ if __name__=="__main__":
                                  a=a)
    
    #-- add fixed variables to results dictionary
-   results.update(fixed_variables)
+   for par, val in fixed_variables.items():
+      results[par] = [val, val, 0, 0]
    
    #-- deal with the switch back to logg
    if 'g' in samples.dtype.names:
@@ -197,18 +203,17 @@ if __name__=="__main__":
       print "   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p]))
    
    
-   out = ""
-   out += "{:0.0f}\t{:0.0f}\t".format(results['teff'][1], np.average([results['teff'][2],results['teff'][3]]))
-   for par in ['logg', 'L', 'rad']:
-      out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
-                                         np.average([results[par][2],results[par][3]]))
-   out += "{:0.0f}\t{:0.0f}\t".format(results['teff2'][1], np.average([results['teff2'][2],results['teff2'][3]]))
-   for par in ['logg2', 'L2', 'rad2']:
-      out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
-                                         np.average([results[par][2],results[par][3]]))
-   out += "{:0.0f}\t{:0.0f}\t".format(results['d'][1], np.average([results['d'][2],results['d'][3]]))
-   
-   print out
+   #out = ""
+   #out += "{:0.0f}\t{:0.0f}\t".format(results['teff'][1], np.average([results['teff'][2],results['teff'][3]]))
+   #for par in ['logg', 'L', 'rad']:
+      #out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
+                                         #np.average([results[par][2],results[par][3]]))
+   #out += "{:0.0f}\t{:0.0f}\t".format(results['teff2'][1], np.average([results['teff2'][2],results['teff2'][3]]))
+   #for par in ['logg2', 'L2', 'rad2']:
+      #out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
+                                         #np.average([results[par][2],results[par][3]]))
+   #out += "{:0.0f}\t{:0.0f}\t".format(results['d'][1], np.average([results['d'][2],results['d'][3]]))
+   #print out
    
    datafile = setup.get('datafile', None)
    if not datafile is None:
