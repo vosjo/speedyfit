@@ -106,6 +106,9 @@ if __name__=="__main__":
    
    #-- pars constraints
    constraints = setup['constraints']
+   if 'parallax' in constraints:
+      p, pe = constraints.pop('parallax')
+      constraints['distance'] = [1000./p, 1000.*pe/p**2]
    if 'distance' in constraints:
       constraints['distance'] = cv.convert('pc', 'Rsol', *constraints['distance'])
    
@@ -203,17 +206,17 @@ if __name__=="__main__":
       print "   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p]))
    
    
-   #out = ""
-   #out += "{:0.0f}\t{:0.0f}\t".format(results['teff'][1], np.average([results['teff'][2],results['teff'][3]]))
-   #for par in ['logg', 'L', 'rad']:
-      #out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
-                                         #np.average([results[par][2],results[par][3]]))
-   #out += "{:0.0f}\t{:0.0f}\t".format(results['teff2'][1], np.average([results['teff2'][2],results['teff2'][3]]))
-   #for par in ['logg2', 'L2', 'rad2']:
-      #out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
-                                         #np.average([results[par][2],results[par][3]]))
-   #out += "{:0.0f}\t{:0.0f}\t".format(results['d'][1], np.average([results['d'][2],results['d'][3]]))
-   #print out
+   out = ""
+   out += "{:0.0f}\t{:0.0f}\t".format(results['teff'][1], np.average([results['teff'][2],results['teff'][3]]))
+   for par in ['logg', 'L', 'rad']:
+      out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
+                                         np.average([results[par][2],results[par][3]]))
+   out += "{:0.0f}\t{:0.0f}\t".format(results['teff2'][1], np.average([results['teff2'][2],results['teff2'][3]]))
+   for par in ['logg2', 'L2', 'rad2']:
+      out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
+                                         np.average([results[par][2],results[par][3]]))
+   out += "{:0.0f}\t{:0.0f}\t".format(results['d'][1], np.average([results['d'][2],results['d'][3]]))
+   print out
    
    datafile = setup.get('datafile', None)
    if not datafile is None:
