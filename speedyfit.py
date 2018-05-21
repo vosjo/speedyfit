@@ -13,7 +13,48 @@ import mcmc, model, plotting, fileio
 from ivs.io import ascii
 from ivs.units import conversions as cv
 
-default = """
+default_single = """
+# photometry file with index to the columns containing the photbands, observations and errors
+photometryfile: <photfilename>
+photband_index: 4
+obs_index: 10
+err_index: 11
+# parameters to fit and the limits on them in same order as parameters
+pnames: [teff, logg, rad, ebv]
+limits:
+- [3500, 8000]
+- [2.50, 4.50]
+- [1.0, 15.0]
+- [0, 0.02]
+# constraints on distance and mass ratio is known
+constraints: 
+  parallax: [99, 99]
+# added constraints on derived properties as mass, luminosity, luminosity ratio
+derived_limits: {}
+# path to the model grids with integrated photometry
+grids: 
+- /home/joris/Python/ivsdata/sedtables/modelgrids/ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits
+# setup for the MCMC algorithm
+nwalkers: 100    # total number of walkers
+nsteps: 1000     # steps taken by each walker (not including burn-in)
+nrelax: 250      # burn-in steps taken by each walker
+a: 10            # relative size of the steps taken
+# set the percentiles for the error determination 
+percentiles: [0.2, 50, 99.8] # 16 - 84 corresponds to 1 sigma
+# output options
+#datafile: None
+plot1:
+ type: sed_fit
+ result: pc
+ path: <objectname>_sed_single.png
+plot2:
+ type: distribution
+ show_best: true
+ path: <objectname>_distribution_single.png
+ parameters: ['teff', 'logg', 'rad', 'L', 'd']
+"""
+
+default_double = """
 # photometry file with index to the columns containing the photbands, observations and errors
 photometryfile: path/to/file.dat
 photband_index: 0
@@ -67,14 +108,21 @@ if __name__=="__main__":
 
    parser = argparse.ArgumentParser()
    parser.add_argument('filename', action="store", type=str, help='use setup given in this file')
-   parser.add_argument("-empty", action='store_true', dest='empty',
-                       help="When used, create an empty setup file with given filename")
+   parser.add_argument("-empty", dest='empty', type=str, default=None,
+                       help="Create empty setup file ('single' or 'double')")
    args, variables = parser.parse_known_args()
    
-   if args.empty:
+   if not args.empty is None:
       
-      ofile = open(args.filename, 'w')
-      ofile.write(default)
+      objectname = args.filename
+      filename = objectname + '_single.yaml'
+      
+      out = default_single if args.empty == 'single' else default_double
+      out = out.replace('<photfilename>', objectname + '.phot')
+      out = out.replace('<objectname>', objectname)
+      
+      ofile = open(filename, 'w')
+      ofile.write(out)
       ofile.close()
       
       sys.exit()
@@ -211,10 +259,11 @@ if __name__=="__main__":
    for par in ['logg', 'L', 'rad']:
       out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
                                          np.average([results[par][2],results[par][3]]))
-   out += "{:0.0f}\t{:0.0f}\t".format(results['teff2'][1], np.average([results['teff2'][2],results['teff2'][3]]))
-   for par in ['logg2', 'L2', 'rad2']:
-      out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
-                                         np.average([results[par][2],results[par][3]]))
+   if 'teff2' in results:
+      out += "{:0.0f}\t{:0.0f}\t".format(results['teff2'][1], np.average([results['teff2'][2],results['teff2'][3]]))
+      for par in ['logg2', 'L2', 'rad2']:
+         out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
+                                          np.average([results[par][2],results[par][3]]))
    out += "{:0.0f}\t{:0.0f}\t".format(results['d'][1], np.average([results['d'][2],results['d'][3]]))
    print out
    
