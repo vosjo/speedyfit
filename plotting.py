@@ -195,8 +195,12 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best'):
       if len(obs[s]) == 0: continue
       
       w = np.array([filters.eff_wave(p) for p in photbands[s]])
-      y = ((obs - syn*scale) / obs)[s]
-      yerr = (obs_err / obs)[s]
+      #y = ((obs - syn*scale) / obs)[s]
+      #yerr = (obs_err / obs)[s]
+      
+      y = 2.5*np.log10(syn[s]*scale / obs[s])
+      yerr = 2.5 / np.log(10.0) * obs_err[s] / obs[s]
+      
       pl.errorbar(w, y , yerr=yerr, ls='', marker='o', color=system_colors[system])
    
    pl.axhline(y=0, color='k', ls='--')
@@ -204,7 +208,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best'):
    pl.xlim(abs_xlim)
    pl.gca().set_xscale('log',nonposx='clip')
    
-   pl.ylabel('(O-C) / O')
+   pl.ylabel('(O-C) (mag)')
    pl.xlabel('Wavelength (AA)')
    
    # plot O-C of the color fits
