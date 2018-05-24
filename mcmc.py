@@ -35,7 +35,7 @@ def lnlike(pars, derived_properties, y, yerr, **kwargs):
    #-- add distance to extra derived parameter (which already contains luminosities)
    extra_drv['d'] = np.sqrt(1/scales)/44365810.04823812 
    
-   return -chi2/2, extra_drv
+   return -np.log(chi2/2), extra_drv
    
 def lnprior(theta, derived_properties, limits, **kwargs):
    """
@@ -143,7 +143,7 @@ def MCMC(obs, obs_err, photbands,
              'derived_limits':derived_limits,
              'prop_func':statfunc.get_derived_properties}
    
-   sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=10, 
+   sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=a, 
                                    args=(obs, obs_err, limits), kwargs=kwargs)
    
    #================
@@ -154,6 +154,9 @@ def MCMC(obs, obs_err, photbands,
    for i, result in enumerate(sampler.sample(pos, iterations=nrelax, storechain=False)):
       if (i+1) % 100 == 0:
          print("{0:5.1%}".format(float(i) / nrelax))
+         
+   sampler.clear_blobs()
+   sampler.reset()
    pos = result[0]
    
    #sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=2, 
@@ -168,7 +171,7 @@ def MCMC(obs, obs_err, photbands,
    
    #-- combine the results from the individual walkers 
    samples = sampler.flatchain
-   blobs = np.array(sampler.blobs).flatten()
+   blobs = np.array(sampler.blobs).T.flatten()
    probabilities = sampler.flatlnprobability
    
    #-- clear the samples to save memory
