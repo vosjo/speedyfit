@@ -114,7 +114,7 @@ if __name__=="__main__":
    if not args.empty is None:
       
       objectname = args.filename
-      filename = objectname + '_single.yaml'
+      filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_double.yaml'
       
       out = default_single if args.empty == 'single' else default_double
       out = out.replace('<photfilename>', objectname + '.phot')
