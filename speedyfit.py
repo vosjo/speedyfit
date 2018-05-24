@@ -11,7 +11,6 @@ from numpy.lib.recfunctions import append_fields
 import mcmc, model, plotting, fileio
 
 from ivs.io import ascii
-from ivs.units import conversions as cv
 
 default_single = """
 # photometry file with index to the columns containing the photbands, observations and errors
@@ -158,7 +157,9 @@ if __name__=="__main__":
       p, pe = constraints.pop('parallax')
       constraints['distance'] = [1000./p, 1000.*pe/p**2]
    if 'distance' in constraints:
-      constraints['distance'] = cv.convert('pc', 'Rsol', *constraints['distance'])
+      # convert pc to Rsol
+      constraints['distance'] = [44365810.04823812 * constraints['distance'][0], 
+                                 44365810.04823812 * constraints['distance'][1]] 
    
    #-- pars limits on derived properties
    derived_limits = setup['derived_limits']
