@@ -181,13 +181,14 @@ if __name__=="__main__":
       grids.append([axis_values, pixelgrid])
    
    #-- switch logg to g for a binary system
-   if 'logg' in pnames:
-      limits[pnames.index('logg')] = 10**limits[pnames.index('logg')]
-      pnames[pnames.index('logg')] = 'g'
-   
-   if 'logg2' in pnames:
-      limits[pnames.index('logg2')] = 10**limits[pnames.index('logg2')]
-      pnames[pnames.index('logg2')] = 'g2'
+   if 'q' in constraints:
+      if 'logg' in pnames:
+         limits[pnames.index('logg')] = 10**limits[pnames.index('logg')]
+         pnames[pnames.index('logg')] = 'g'
+      
+      if 'logg2' in pnames:
+         limits[pnames.index('logg2')] = 10**limits[pnames.index('logg2')]
+         pnames[pnames.index('logg2')] = 'g2'
    
    
    #-- check for variables that are kept fixed

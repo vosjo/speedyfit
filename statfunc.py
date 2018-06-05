@@ -239,7 +239,7 @@ def get_derived_properties_single(theta, pnames):
    
    return derived_properties
 
-def stat_chi2(meas, e_meas, colors, syn, **kwargs):
+def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
    """
    Calculate Chi2 and compute angular diameter.
    
@@ -286,12 +286,13 @@ def stat_chi2(meas, e_meas, colors, syn, **kwargs):
    # Then add Chi2 of derived properties as distance, mass ratio, ...
    #=================================================================
    derived_properties = kwargs.get('constraints_syn', {})
+   constraints = kwargs.get('constraints', {})
    
    #-- Chi2 of the distance measurement
    #   this can only be done if absolute fluxes are included in the fit.
-   if 'distance' in kwargs and sum(~colors) > 0:
-      syn_scale = 1./kwargs['distance'][0]**2
-      syn_scale_e = 2. * kwargs['distance'][1] / kwargs['distance'][0]**3 
+   if 'distance' in constraints and sum(~colors) > 0:
+      syn_scale = 1./constraints['distance'][0]**2
+      syn_scale_e = 2. * constraints['distance'][1] / constraints['distance'][0]**3 
       
       chi2_d = (scale - syn_scale)**2 / syn_scale_e**2
       
@@ -301,14 +302,26 @@ def stat_chi2(meas, e_meas, colors, syn, **kwargs):
    #-- Chi2 of the Mass-Ratio
    #   q needs to be computed elsewhere and provided in the kwargs
    
-   if 'q' in kwargs and 'q' in derived_properties:
-      q, q_e = kwargs['q'][0], kwargs['q'][1]
+   if 'q' in constraints and 'q' in derived_properties:
+      q, q_e = constraints['q'][0], constraints['q'][1]
       syn_q = derived_properties['q']
       
       chi2_q = (q - syn_q)**2 / q_e**2
       
       # append to chisq array
       chisq = np.append(chisq, chi2_q)
+   
+   #-- calculate Chi2 of any remaining constraints on the parameters
+   
+   for con, val in constraints.items():
+      if con in pars:
+         c, c_e = val[0], val[1]
+         syn_c = pars[con]
+         
+         chi2_c = (c - syn_c)**2 / c_e**2
+         
+         # append to chisq array
+         chisq = np.append(chisq, chi2_c)
    
    return chisq.sum(axis=0), scale, e_scale
   

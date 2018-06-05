@@ -97,19 +97,21 @@ def plot_distribution_density(data, xpar, ypar, percentiles=[16, 50, 84]):
    
    
  
-def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best'):
+def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', plot_components=True):
    
    pars = pars.copy()
    
    # use model from 'best' results or 'pc' results
    resi = 0 if result == 'best' else 1
    
-   grid1 = dict(grid='kurucz2', z=0, Rv=3.1)
-   grid2 = dict(grid='tmap', z=0, Rv=3.1)
+   #grid1 = dict(grid='kurucz2', z=0, Rv=3.1)
+   grid1 = dict(grid='tmap', z=0, Rv=3.1)
+   grid2 = dict(grid='kurucz2', z=0, Rv=3.1)
+   #grid2 = dict(grid='tmap', z=0, Rv=3.1)
    #grid2 = dict(grid='wd_da', z=0, Rv=3.1)
    model.set_defaults_multiple(grid1,grid2)
    
-   model.set_defaults(**grid1)
+   model.set_defaults(**grid2)
    
    
    colors = np.array([filters.is_color(p) for p in photbands])
@@ -155,6 +157,19 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best'):
       #-- synthetic model
       wave, flux = model.get_table(**pars)
       pl.plot(wave, scale*flux, '-r')
+      
+      #-- plot components
+      if plot_components and 'teff2' in pars:
+         model.set_defaults(**grid1)
+         wave, flux = model.get_table(teff=pars['teff'], logg=pars['logg'], rad=pars['rad'], ebv=pars['ebv'])
+         pl.plot(wave, scale*flux, '--g')
+         
+         model.set_defaults(**grid2)
+         wave, flux = model.get_table(teff=pars['teff2'], logg=pars['logg2'], rad=pars['rad2'], ebv=pars['ebv'])
+         pl.plot(wave, scale*flux, '--b')
+         
+         
+      
    
    for system in all_systems:
       s = np.where((psystems == system) & (~colors))
@@ -190,18 +205,25 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best'):
    #====================================
    ax = pl.subplot2grid((3,3), (2, 0), colspan=2, rowspan=1)
    
+   chi2, chi2mag = 0, 0
    for system in all_systems:
       s = np.where((psystems == system) & (~colors))
       if len(obs[s]) == 0: continue
       
       w = np.array([filters.eff_wave(p) for p in photbands[s]])
-      #y = ((obs - syn*scale) / obs)[s]
-      #yerr = (obs_err / obs)[s]
+      y = ((obs - syn*scale) / obs)[s]
+      yerr = (obs_err / obs)[s]
+      
+      chi2 += np.sum(y**2 / yerr**2)
       
       y = 2.5*np.log10(syn[s]*scale / obs[s])
       yerr = 2.5 / np.log(10.0) * obs_err[s] / obs[s]
       
+      chi2mag += np.sum(y**2 / yerr**2)
+      
       pl.errorbar(w, y , yerr=yerr, ls='', marker='o', color=system_colors[system])
+   
+   pl.figtext(0.96, 0.96, '$\chi^2$ = {:0.2f}, {:0.2f}'.format(chi2, chi2mag), ha='right')
    
    pl.axhline(y=0, color='k', ls='--')
    
@@ -246,13 +268,18 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best'):
    #=======================================
    ax = pl.subplot2grid((3,3), (2, 2), colspan=1, rowspan=1)
    
+   con = {}
+   if 'q' in constraints: con['q'] = constraints['q']
+   if 'distance' in constraints: con['distance'] = constraints['distance'] 
+   constraints = con
+   
    if len(constraints.keys()) > 0:
       
       #-- get derived properties
-      theta, pnames = [], []
-      for n, v in pars.items():
-         pnames.append(n)
-         theta.append(v)
+      #theta, pnames = [], []
+      #for n, v in pars.items():
+         #pnames.append(n)
+         #theta.append(v)
       
       derived_properties = statfunc.get_derived_properties(pars)
       derived_properties['distance'] = np.sqrt(1/scale) 
@@ -277,3 +304,4 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best'):
       pl.xticks(x, xticknames)
    
    pl.figtext(0.03, 0.96, 'model = {}'.format(result))
+   

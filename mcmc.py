@@ -28,14 +28,16 @@ def lnlike(pars, derived_properties, y, yerr, **kwargs):
    
    chi2, scales, e_scales = stat_func(y,
                                       yerr,
-                                      colors, y_syn, 
+                                      colors, y_syn, pars,
                                       constraints_syn=derived_properties,
-                                      **constraints)
+                                      constraints=constraints)
    
    #-- add distance to extra derived parameter (which already contains luminosities)
    extra_drv['d'] = np.sqrt(1/scales)/44365810.04823812 
    
-   return -np.log(chi2/2), extra_drv
+   #print pars, -chi2/2
+   
+   return -chi2/2, extra_drv
    
 def lnprior(theta, derived_properties, limits, **kwargs):
    """
