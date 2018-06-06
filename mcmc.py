@@ -126,14 +126,17 @@ def lnprob(theta, y, yerr, limits, **kwargs):
 def MCMC(obs, obs_err, photbands, 
          pnames, limits, grids, 
          fixed_variables={}, constraints={}, derived_limits={},
-         nwalkers=100, nsteps=1000, nrelax=150, a=10):
+         nwalkers=100, nsteps=1000, nrelax=150, a=10, pos=None):
    
    #-- check which bands are colors
    colors = np.array([model.is_color(photband) for photband in photbands],bool)
    
-   #-- initialize the walkers
-   pos = [ np.random.uniform(lim[0], lim[1], nwalkers) for lim in limits]
-   pos = np.array(pos).T
+   #-- initialize the walkers randomly is no starting positions are given
+   if pos is None:
+      pos = [ np.random.uniform(lim[0], lim[1], nwalkers) for lim in limits]
+      pos = np.array(pos).T
+   else:
+      nwalkers = pos.shape[0]
    
    #-- setup the sampler
    ndim = len(pnames)
@@ -152,14 +155,15 @@ def MCMC(obs, obs_err, photbands,
    # MCMC part
    
    #-- burn in (let walkers relax before starting to store results)
-   print "\nBurn In"
-   for i, result in enumerate(sampler.sample(pos, iterations=nrelax, storechain=False)):
-      if (i+1) % 100 == 0:
-         print("{0:5.1%}".format(float(i) / nrelax))
-         
-   sampler.clear_blobs()
-   sampler.reset()
-   pos = result[0]
+   if nrelax > 0:
+      print "\nBurn In"
+      for i, result in enumerate(sampler.sample(pos, iterations=nrelax, storechain=False)):
+         if (i+1) % 100 == 0:
+            print("{0:5.1%}".format(float(i) / nrelax))
+            
+      sampler.clear_blobs()
+      sampler.reset()
+      pos = result[0]
    
    #sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=2, 
                                    #args=(obs, obs_err, limits), kwargs=kwargs)
