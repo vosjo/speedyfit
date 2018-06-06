@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def get_derived_properties(pars):
+def get_derived_properties(**pars):
    """
    Function that will derive several properties based on the chosen models
    
@@ -78,7 +78,13 @@ def get_derived_properties(pars):
    derived_properties.update({'d':0, 'L':0})
    if 'rad2' in pars:
       derived_properties['L2'] = 0
-   
+   if hasattr(pars['teff'], '__iter__'):
+      derived_properties['d'] = np.zeros_like(pars['teff'])
+      derived_properties['L'] = np.zeros_like(pars['teff'])
+      if 'rad2' in pars:
+         derived_properties['L2'] = np.zeros_like(pars['teff'])
+      
+      
    return derived_properties
 
 #def get_derived_properties(theta, pnames):

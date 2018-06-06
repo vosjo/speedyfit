@@ -17,7 +17,7 @@ def lnlike(pars, derived_properties, y, yerr, **kwargs):
    """
    model_func = kwargs.pop('model_func', model.get_itable)
    stat_func = kwargs.pop('stat_func', statfunc.stat_chi2)
-   colors = kwargs.get('colors', [False for i in y])
+   colors = kwargs.get('colors', np.array([False for i in y], bool))
    constraints = kwargs.pop('constraints', {})
    
    
@@ -102,7 +102,7 @@ def lnprob(theta, y, yerr, limits, **kwargs):
    
    #-- get derived properties
    prop_func = kwargs.pop('prop_func', statfunc.get_derived_properties)
-   syn_drv = prop_func(pars)
+   syn_drv = prop_func(**pars)
    
    if 'rad' in syn_drv:
       pars['rad']=syn_drv['rad']
@@ -165,8 +165,6 @@ def MCMC(obs, obs_err, photbands,
       sampler.reset()
       pos = result[0]
    
-   #sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, a=2, 
-                                   #args=(obs, obs_err, limits), kwargs=kwargs)
    
    print "\nRun"
    #-- run the sampler
