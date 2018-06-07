@@ -289,7 +289,7 @@ def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
    
    # Then add Chi2 of derived properties as distance, mass ratio, ...
    #=================================================================
-   derived_properties = kwargs.get('constraints_syn', {})
+   derived_properties = kwargs.get('derived_properties', {})
    constraints = kwargs.get('constraints', {})
    
    #-- Chi2 of the distance measurement
@@ -321,6 +321,15 @@ def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
       if con in pars:
          c, c_e = val[0], val[1]
          syn_c = pars[con]
+         
+         chi2_c = (c - syn_c)**2 / c_e**2
+         
+         # append to chisq array
+         chisq = np.append(chisq, chi2_c)
+         
+      if con in derived_properties:
+         c, c_e = val[0], val[1]
+         syn_c = derived_properties[con]
          
          chi2_c = (c - syn_c)**2 / c_e**2
          
@@ -374,7 +383,7 @@ def stat_chi2_multiple(meas, e_meas, colors, syn, pars, **kwargs):
    
    # Then add Chi2 of derived properties as distance, mass ratio, ...
    #=================================================================
-   derived_properties = kwargs.get('constraints_syn', {})
+   derived_properties = kwargs.get('derived_properties', {})
    constraints = kwargs.get('constraints', {})
    
    #-- Chi2 of the distance measurement
