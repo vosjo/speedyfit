@@ -166,19 +166,7 @@ if __name__=="__main__":
    
    #-- pars grid
    gridnames = setup['grids']
-   
-   grids = []
-   for i, name in enumerate(gridnames):
-      
-      ind = '' if i == 0 else str(i + 1)
-      
-      axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, name,
-            teffrange=limits[pnames.index('teff'+ind)],
-            loggrange=limits[pnames.index('logg'+ind)],
-            ebvrange =limits[pnames.index('ebv')],
-            variables=['teff','logg','ebv'])
-
-      grids.append([axis_values, pixelgrid])
+   grids = model.load_grids(gridnames, pnames, limits)
    
    #-- switch logg to g for a binary system
    if 'q' in constraints:
@@ -292,6 +280,7 @@ if __name__=="__main__":
          res = setup[pindex].get('result', 'best')
          
          pl.figure(i)
+         pl.subplots_adjust(wspace=0.25)
          plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints, result=res)
          
          if not setup[pindex].get('path', None) is None:

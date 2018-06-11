@@ -8,6 +8,26 @@ import interpol
 from ivs.aux import loggers
 logger = loggers.get_basic_logger()
 
+def load_grids(gridnames, pnames, limits):
+   """
+   prepares the integrated photometry grid by loading the grid and cutting it to the size
+   given in limits.
+   """
+   grids = []
+   for i, name in enumerate(gridnames):
+      
+      ind = '' if i == 0 else str(i + 1)
+      
+      axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, name,
+            teffrange=limits[pnames.index('teff'+ind)],
+            loggrange=limits[pnames.index('logg'+ind)],
+            ebvrange =limits[pnames.index('ebv')],
+            variables=['teff','logg','ebv'])
+
+      grids.append([axis_values, pixelgrid])
+      
+   return grids
+
 def prepare_grid(photbands, gridfilename,
                  teffrange=(-np.inf,np.inf),loggrange=(-np.inf,np.inf),
                  ebvrange=(-np.inf,np.inf),
@@ -103,7 +123,7 @@ def get_itable(grid=[], **kwargs):
    if len(components) == 1:
       kwargs.update(values)
       fluxes, Labs = get_itable_single(grid=grids[0], **kwargs)
-      return fluxes, {'L':np.sum(Labs,axis=0)}
+      return fluxes, {'L':Labs}
    
    fluxes, Labs = [],{}                               
    for i, (comp, grid) in enumerate(zip(components,grids)):
