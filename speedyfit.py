@@ -153,20 +153,25 @@ if __name__=="__main__":
    
    #-- pars constraints
    constraints = setup['constraints']
+   for con, val in constraints.items():
+      if len(val) == 2:
+         constraints[con] = [val[0], val[1], val[1]]
+   
    if 'parallax' in constraints:
-      p, pe = constraints.pop('parallax')
-      constraints['distance'] = [1000./p, 1000.*pe/p**2]
+      p, pm, pp = constraints.pop('parallax')
+      constraints['distance'] = [1000./p, 1000.*pm/p**2, 1000.*pp/p**2]
    if 'distance' in constraints:
       # convert pc to Rsol
       constraints['distance'] = [44365810.04823812 * constraints['distance'][0], 
-                                 44365810.04823812 * constraints['distance'][1]] 
+                                 44365810.04823812 * constraints['distance'][1],
+                                 44365810.04823812 * constraints['distance'][2],] 
    
    #-- pars limits on derived properties
    derived_limits = setup['derived_limits']
    
    #-- pars grid
    gridnames = setup['grids']
-   grids = model.load_grids(gridnames, pnames, limits)
+   grids = model.load_grids(gridnames, pnames, limits, photbands)
    
    #-- switch logg to g for a binary system
    if 'q' in constraints:

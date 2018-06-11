@@ -8,7 +8,7 @@ import interpol
 from ivs.aux import loggers
 logger = loggers.get_basic_logger()
 
-def load_grids(gridnames, pnames, limits):
+def load_grids(gridnames, pnames, limits, photbands):
    """
    prepares the integrated photometry grid by loading the grid and cutting it to the size
    given in limits.
@@ -18,7 +18,7 @@ def load_grids(gridnames, pnames, limits):
       
       ind = '' if i == 0 else str(i + 1)
       
-      axis_values, grid_pars, pixelgrid, grid_names = model.prepare_grid(photbands, name,
+      axis_values, grid_pars, pixelgrid, grid_names = prepare_grid(photbands, name,
             teffrange=limits[pnames.index('teff'+ind)],
             loggrange=limits[pnames.index('logg'+ind)],
             ebvrange =limits[pnames.index('ebv')],
