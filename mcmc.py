@@ -21,21 +21,22 @@ def lnlike(pars, derived_properties, y, yerr, **kwargs):
    constraints = kwargs.pop('constraints', {})
    
    
-   #-- calculate synthetic msamagnitudes **kwargs contains infor about which grid to use
+   #-- calculate synthetic magnitudes **kwargs contains info about which grid to use
    kwargs.update(pars)
    y_syn, extra_drv = model_func(**kwargs)
+   derived_properties.update(extra_drv)
    
    
    chi2, scales, e_scales = stat_func(y,
                                       yerr,
                                       colors, y_syn, pars,
-                                      constraints_syn=derived_properties,
+                                      derived_properties=derived_properties,
                                       constraints=constraints)
    
    #-- add distance to extra derived parameter (which already contains luminosities)
+   #   distance is converted from Rsol to pc
    extra_drv['d'] = np.sqrt(1/scales)/44365810.04823812 
-   
-   #print pars, -chi2/2
+   extra_drv['chi2'] = chi2
    
    return -chi2/2, extra_drv
    

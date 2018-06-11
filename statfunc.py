@@ -292,46 +292,23 @@ def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
    derived_properties = kwargs.get('derived_properties', {})
    constraints = kwargs.get('constraints', {})
    
-   #-- Chi2 of the distance measurement
-   #   this can only be done if absolute fluxes are included in the fit.
-   if 'distance' in constraints and sum(~colors) > 0:
-      syn_scale = 1./constraints['distance'][0]**2
-      syn_scale_e = 2. * constraints['distance'][1] / constraints['distance'][0]**3 
-      
-      chi2_d = (scale - syn_scale)**2 / syn_scale_e**2
-      
-      # append to chisq array
-      chisq = np.append(chisq, chi2_d)
-   
-   #-- Chi2 of the Mass-Ratio
-   #   q needs to be computed elsewhere and provided in the kwargs
-   
-   if 'q' in constraints and 'q' in derived_properties:
-      q, q_e = constraints['q'][0], constraints['q'][1]
-      syn_q = derived_properties['q']
-      
-      chi2_q = (q - syn_q)**2 / q_e**2
-      
-      # append to chisq array
-      chisq = np.append(chisq, chi2_q)
-   
-   #-- calculate Chi2 of any remaining constraints on the parameters
-   
-   for con, val in constraints.items():
-      if con in pars:
-         c, c_e = val[0], val[1]
+   for con, (c, c_m, c_p) in constraints.items():
+      syn_c = None
+      if con == 'distance' and sum(~colors) > 0:
+         # distance can only be constrained if there is at least 1 absolute measurement
+         c, c_m, c_p = 1./c**2, 2.*c_m/c**3, 2.*c_p/c**3
+         syn_c = scale
+         
+      elif con in pars:
+         #constrained on a fitted parameter
          syn_c = pars[con]
          
-         chi2_c = (c - syn_c)**2 / c_e**2
-         
-         # append to chisq array
-         chisq = np.append(chisq, chi2_c)
-         
-      if con in derived_properties:
-         c, c_e = val[0], val[1]
+      elif con in derived_properties:
+         # constrained on a derived parameter
          syn_c = derived_properties[con]
-         
-         chi2_c = (c - syn_c)**2 / c_e**2
+      
+      if not syn_c is None:
+         chi2_c = np.where(syn_c < c, (syn_c - c)**2 / c_m**2, (syn_c - c)**2 / c_p**2)
          
          # append to chisq array
          chisq = np.append(chisq, chi2_c)
