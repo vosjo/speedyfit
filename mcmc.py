@@ -24,6 +24,9 @@ def lnlike(pars, derived_properties, y, yerr, **kwargs):
    #-- calculate synthetic magnitudes **kwargs contains info about which grid to use
    kwargs.update(pars)
    y_syn, extra_drv = model_func(**kwargs)
+   if 'L' in extra_drv and 'L2' in extra_drv:
+      #-- update light ratio with correct value from models
+      extra_drv['lr'] = extra_drv['L'] / extra_drv['L2']
    derived_properties.update(extra_drv)
    
    

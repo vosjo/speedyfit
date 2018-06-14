@@ -182,7 +182,18 @@ if __name__=="__main__":
       if 'logg2' in pnames:
          limits[pnames.index('logg2')] = 10**limits[pnames.index('logg2')]
          pnames[pnames.index('logg2')] = 'g2'
-   
+      
+      if 'logg' in constraints:
+         g = 10**constraints['logg'][0]
+         g_el = g * constraints['logg'][1] * np.log(10)
+         g_eu = g * constraints['logg'][2] * np.log(10)
+         constraints['g'] = [g, g_el, g_eu]
+         
+      if 'logg2' in constraints:
+         g = 10**constraints['logg2'][0]
+         g_el = g * constraints['logg2'][1] * np.log(10)
+         g_eu = g * constraints['logg2'][2] * np.log(10)
+         constraints['g2'] = [g, g_el, g_eu]
    
    #-- check for variables that are kept fixed
    fixed = np.where(limits[:,0] == limits[:,1])
@@ -230,6 +241,9 @@ if __name__=="__main__":
    if 'g2' in results:
       results['logg2'] = np.log10(results['g2'])
       results.pop('g2')
+      
+   _ = constraints.pop('g', None)
+   _ = constraints.pop('g2', None)
    
    names = list(samples.dtype.names)
    if 'g' in names: names.remove('g')
@@ -291,7 +305,18 @@ if __name__=="__main__":
          if not setup[pindex].get('path', None) is None:
             pl.savefig(setup[pindex].get('path', 'sed_fit.png'))
    
-   
+      
+      if setup[pindex]['type'] == 'constraints':
+         
+         pl.figure(i, figsize=(2*len(constraints), 6) )
+         pl.subplots_adjust(wspace=0.40, left=0.07, right=0.98)
+         
+         plotting.plot_constraints(constraints, samples, results)
+         
+         if not setup[pindex].get('path', None) is None:
+            pl.savefig(setup[pindex].get('path', 'constraints.png'))
+      
+      
       if setup[pindex]['type'] == 'distribution':
          
          pars1 = []

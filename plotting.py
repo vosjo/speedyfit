@@ -3,6 +3,8 @@ import numpy as np
 import pylab as pl
 
 import matplotlib.cm as cm
+import matplotlib.patches as patches
+import matplotlib.ticker as ticker
 
 from scipy.stats import gaussian_kde
 
@@ -95,7 +97,53 @@ def plot_distribution_density(data, xpar, ypar, percentiles=[16, 50, 84]):
    
    pl.scatter(x, y, c=z, s=50, edgecolor='')
    
+
+def plot_constraints(constraints, samples, results):
    
+   if 'distance' in constraints:
+      constraints['d'] = np.array(constraints.pop('distance')) / 44365810.04823812
+   
+   pars = sorted(constraints.keys())
+   
+   for i, par in enumerate(pars):
+   
+      ax = pl.subplot(1, len(pars), i+1)
+      
+      pc = np.percentile(samples[par], [0.2, 16, 50, 84, 99.8])
+      
+      #-- plot 1 sigma range as box
+      ax.add_patch(
+         patches.Rectangle(
+            (0.5, pc[1]),
+            1.0,
+            pc[3]-pc[1],
+            fill=False 
+         )
+      )
+         
+      #-- plot best fit and 50 percentile fit
+      pl.plot([0.5,1.5], [results[par][0], results[par][0]], '--r', lw=1.5)
+      pl.plot([0.5,1.5], [results[par][1], results[par][1]], '-b', lw=1.5)
+      
+      #-- plot 3 sigma range as wiskers
+      pl.plot([1.0, 1.0], [pc[0], pc[1]], '-k', lw=1.5, zorder=0)
+      pl.plot([1.0, 1.0], [pc[3], pc[4]], '-k', lw=1.5, zorder=0)
+      
+      #pl.boxplot(samples[par], usermedians=usermedians)
+      
+      if par in constraints:
+         pl.errorbar([1], constraints[par][0], 
+                     yerr=[[constraints[par][1]],[constraints[par][2]]],
+                     color='r', marker='x', mew=2, lw=2)
+      
+      ax.axes.get_xaxis().set_visible(False)
+      
+      if 'teff' in par:
+         ticks = ticker.FuncFormatter(lambda x, pos: '{:0.1f}'.format(x/1000.))
+         ax.yaxis.set_major_formatter(ticks)
+      
+      pl.title(par)
+
  
 def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', plot_components=True):
    
@@ -106,12 +154,14 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
    
    #grid1 = dict(grid='kurucz2', z=0, Rv=3.1)
    grid1 = dict(grid='tmap', z=0, Rv=3.1)
-   grid2 = dict(grid='kurucz2', z=0, Rv=3.1)
-   #grid2 = dict(grid='tmap', z=0, Rv=3.1)
+   #grid1 = dict(grid='blackbody')
+   #grid2 = dict(grid='kurucz2', z=0, Rv=3.1)
+   grid2 = dict(grid='tmap', z=0, Rv=3.1)
    #grid2 = dict(grid='wd_da', z=0, Rv=3.1)
+   #grid2 = dict(grid='blackbody')
    model.set_defaults_multiple(grid1,grid2)
    
-   model.set_defaults(**grid2)
+   model.set_defaults(**grid1)
    
    
    colors = np.array([filters.is_color(p) for p in photbands])
@@ -130,10 +180,12 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
    if not len(pars.keys()) == 0:
       ipars = pars.copy()
       for key, value in pars.items():
-         ipars[key] = [value[resi]]
-         pars[key] = value[resi]
-      
-      print ipars
+         if key == 'chi2':
+            ipars[key] = [value[0]]
+            pars[key] = value[0]
+         else:
+            ipars[key] = [value[resi]]
+            pars[key] = value[resi]
       
       syn, Labs = model.get_itable_pix(photbands=photbands, **ipars)
       syn = syn[:,0]
@@ -146,7 +198,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
    
    # plot the fit of the absolute data
    #====================================
-   ax = pl.subplot2grid((3,3), (0, 0), colspan=2, rowspan=2)
+   ax1 = pl.subplot2grid((3,3), (0, 0), colspan=2, rowspan=2)
    
    
    if not len(pars.keys()) == 0:
@@ -183,13 +235,13 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
    pl.xlim(abs_xlim)
    pl.ylim([0.9*np.min(obs[~colors]), 1.1*np.max(obs[~colors])])
    pl.legend(loc='best', prop={'size': 9}, numpoints=1)
-   ax.set_xscale("log", nonposx='clip')
-   ax.set_yscale("log", nonposy='clip')
+   ax1.set_xscale("log", nonposx='clip')
+   ax1.set_yscale("log", nonposy='clip')
    
    pl.ylabel('Absolute Flux')
    
    #-- add band names to top of axis
-   ax2 = ax.twiny()
+   ax2 = ax1.twiny()
    ax2.set_xscale("log", nonposx='clip')
    ax2.set_xlim(abs_xlim)
    waves = np.array([filters.eff_wave(p) for p in photbands[~colors]])
@@ -205,7 +257,6 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
    #====================================
    ax = pl.subplot2grid((3,3), (2, 0), colspan=2, rowspan=1)
    
-   chi2, chi2mag = 0, 0
    for system in all_systems:
       s = np.where((psystems == system) & (~colors))
       if len(obs[s]) == 0: continue
@@ -214,16 +265,12 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
       y = ((obs - syn*scale) / obs)[s]
       yerr = (obs_err / obs)[s]
       
-      chi2 += np.sum(y**2 / yerr**2)
-      
       y = 2.5*np.log10(syn[s]*scale / obs[s])
       yerr = 2.5 / np.log(10.0) * obs_err[s] / obs[s]
       
-      chi2mag += np.sum(y**2 / yerr**2)
-      
       pl.errorbar(w, y , yerr=yerr, ls='', marker='o', color=system_colors[system])
    
-   pl.figtext(0.96, 0.96, '$\chi^2$ = {:0.2f}, {:0.2f}'.format(chi2, chi2mag), ha='right')
+   pl.figtext(0.96, 0.96, '$\chi^2$ = {:0.2f}'.format(pars['chi2']), ha='right')
    
    pl.axhline(y=0, color='k', ls='--')
    
@@ -233,6 +280,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
    pl.ylabel('(O-C) (mag)')
    pl.xlabel('Wavelength (AA)')
    
+
    # plot O-C of the color fits
    #====================================
    ax = pl.subplot2grid((3,3), (0, 2), colspan=1, rowspan=2)
@@ -268,40 +316,35 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
    #=======================================
    ax = pl.subplot2grid((3,3), (2, 2), colspan=1, rowspan=1)
    
-   con = {}
-   if 'q' in constraints: con['q'] = constraints['q']
-   if 'distance' in constraints: con['distance'] = constraints['distance'] 
-   constraints = con
+   x, xticknames = [], []
    
-   if len(constraints.keys()) > 0:
+   if 'q' in constraints:
       
-      #-- get derived properties
-      #theta, pnames = [], []
-      #for n, v in pars.items():
-         #pnames.append(n)
-         #theta.append(v)
+      q, ql, qu = constraints['q']
       
-      derived_properties = statfunc.get_derived_properties(pars)
-      derived_properties['distance'] = np.sqrt(1/scale) 
+      ax.plot([1], pars['q'], 'k_', ms=15, mew=2)
+      ax.errorbar([1], [q], yerr = [[ql], [qu]], marker='o')
       
-      x = range(len(constraints.keys()))
-      y, yerr, xticknames = [], [], []
-      for n, v in constraints.items():
-         y.append( (v[0] - derived_properties[n] ) / v[0] )
-         yerr.append(v[1]/ v[0])
-         xticknames.append(n)
-      
-      pl.errorbar(x, y, yerr=yerr, ls='', marker='o')
+      x.append(1)
+      xticknames.append('q')
    
-      pl.axhline(y=0, color='k', ls='--')
+   
+   if 'distance' in constraints:
       
-      ax.yaxis.tick_right()
-      ax.xaxis.tick_bottom()
-      ax.yaxis.set_label_position('right') 
+      ax2 = ax.twinx()
       
-      pl.ylabel('(O-C) / O')
-      pl.xlim([-x[-1]*0.1, x[-1]*1.1])
-      pl.xticks(x, xticknames)
+      d  = constraints['distance'][0] / 44365810.04823812
+      de = constraints['distance'][1] / 44365810.04823812
+      
+      
+      ax2.plot([2], pars['d'], 'k_', ms=15, mew=2)
+      ax2.errorbar([2], [d], yerr = de, marker='o')
+      
+      x.append(2)
+      xticknames.append('distance')
+   
+   pl.xlim([0.5, 2.5])
+   pl.xticks(x, xticknames)
+   
    
    pl.figtext(0.03, 0.96, 'model = {}'.format(result))
-   

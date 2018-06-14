@@ -73,6 +73,13 @@ def get_derived_properties(**pars):
       l2 = ( derived_properties['rad2']**2 * pars['teff2']**4 )
       derived_properties['lr'] = l1 / l2
    
+   #-- derive radius ratio
+   if 'rad' in pars and 'rad2' in pars:
+      derived_properties['rr'] = pars['rad'] / pars['rad2']
+      
+   if 'rad' in derived_properties and 'rad2' in derived_properties:
+      derived_properties['rr'] = derived_properties['rad'] / derived_properties['rad2']
+   
    #-- add empty values for luminosity and distance to prevent problems with 
    #   failed models
    derived_properties.update({'d':0, 'L':0})
@@ -352,7 +359,7 @@ def stat_chi2_multiple(meas, e_meas, colors, syn, pars, **kwargs):
       scale = np.average(ratio,weights=weights.reshape(-1),axis=0)
       e_scale = np.sqrt(np.dot(weights.T, (ratio-scale)**2)/weights.sum(axis=0))[0]
    else:
-      scale = np.zeros(syn.shape[1])
+      scale, e_scale = np.zeros(syn.shape[1]), np.zeros(syn.shape[1])
    
    #-- we don't need to scale the colors, only the absolute fluxes
    chisq = np.where(colors.reshape(-1,1), (syn-meas)**2/e_meas**2, (syn*scale-meas)**2/e_meas**2)
@@ -363,38 +370,25 @@ def stat_chi2_multiple(meas, e_meas, colors, syn, pars, **kwargs):
    derived_properties = kwargs.get('derived_properties', {})
    constraints = kwargs.get('constraints', {})
    
-   #-- Chi2 of the distance measurement
-   #   this can only be done if absolute fluxes are included in the fit.
-   if 'distance' in constraints and sum(~colors) > 0:
-      syn_scale = 1./constraints['distance'][0]**2
-      syn_scale_e = 2. * constraints['distance'][1] / constraints['distance'][0]**3 
-      
-      chi2_d = (scale - syn_scale)**2 / syn_scale_e**2
-      
-      # append to chisq array
-      chisq = np.vstack([chisq, chi2_d])
-   
-   #-- Chi2 of the Mass-Ratio
-   #   q needs to be computed elsewhere and provided in the kwargs
-   
-   if 'q' in constraints and 'q' in derived_properties:
-      q, q_e = constraints['q'][0], constraints['q'][1]
-      syn_q = derived_properties['q']
-      
-      chi2_q = (q - syn_q)**2 / q_e**2
-      
-      # append to chisq array
-      chisq = np.vstack([chisq, chi2_q])
-   
-   #-- calculate Chi2 of any remaining constraints on the parameters
-   for con, val in constraints.items():
-      if con in pars:
-         c, c_e = val[0], val[1]
+   for con, (c, c_m, c_p) in constraints.items():
+      syn_c = None
+      if con == 'distance' and sum(~colors) > 0:
+         # distance can only be constrained if there is at least 1 absolute measurement
+         c, c_m, c_p = 1./c**2, 2.*c_m/c**3, 2.*c_p/c**3
+         syn_c = scale
+         
+      elif con in pars:
+         #constrained on a fitted parameter
          syn_c = pars[con]
          
-         chi2_c = (c - syn_c)**2 / c_e**2
+      elif con in derived_properties:
+         # constrained on a derived parameter
+         syn_c = derived_properties[con]
+      
+      if not syn_c is None:
+         chi2_c = np.where(syn_c < c, (syn_c - c)**2 / c_m**2, (syn_c - c)**2 / c_p**2)
          
          # append to chisq array
-         chisq = np.vstack([chisq, chi2_c])
+         chisq =  np.vstack([chisq, chi2_c])
    
    return chisq.sum(axis=0), scale, e_scale
