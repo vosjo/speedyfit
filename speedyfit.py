@@ -137,7 +137,7 @@ if __name__=="__main__":
    setupfile.close()
    
    #-- parse photometry
-   data = ascii.read2array(setup['photometryfile'], dtype=str).T
+   data = fileio.read2array(setup['photometryfile'], dtype=str).T
    photbands = data[setup['photband_index']]
    obs = np.array(data[setup['obs_index']], dtype=float)
    obs_err = np.array(data[setup['err_index']], dtype=float)
