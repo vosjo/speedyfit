@@ -180,12 +180,8 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
    if not len(pars.keys()) == 0:
       ipars = pars.copy()
       for key, value in pars.items():
-         if key == 'chi2':
-            ipars[key] = [value[0]]
-            pars[key] = value[0]
-         else:
-            ipars[key] = [value[resi]]
-            pars[key] = value[resi]
+         ipars[key] = [value[resi]]
+         pars[key] = value[resi]
       
       syn, Labs = model.get_itable_pix(photbands=photbands, **ipars)
       syn = syn[:,0]

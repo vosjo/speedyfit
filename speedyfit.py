@@ -255,9 +255,20 @@ if __name__=="__main__":
    print "Resulting parameter values and errors:"
       
    pc  = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), percentiles, axis=0)
+   pars = {}
    for p, v, e1, e2 in zip(samples.dtype.names, pc[1], pc[1]-pc[0], pc[2]-pc[1]):
       results[p] = [results[p], v, e1, e2]
-      
+      pars[p] = v
+   
+   #-- calculate the Chi2 of the 50th percentile results
+   y_syn, extra_drv = model.get_itable(**pars)
+   chi2, _, _ = stat_func(obs,
+                         obs_err,
+                         colors, y_syn, pars,
+                         constraints=constraints)
+   results['chi2'] = [results['chi2'][0], chi2, results['chi2'][2], results['chi2'][3]]
+   
+   
    print "   Par             Best        Pc       emin       emax"
    for p in samples.dtype.names:
       print "   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p]))
