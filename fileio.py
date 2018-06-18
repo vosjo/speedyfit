@@ -3,6 +3,8 @@ import h5py
 import yaml
 import datetime
 
+import numpy as np
+
 try:
    import gzip
    has_zip = True
@@ -11,7 +13,7 @@ except Exception, d:
 
 from astropy.io import fits
 
-def read2list(filename, commentchar='#', splitchar=None, skip_empty=True, skip_lines=0):
+def read2list(filename, commentchar='#', splitchar=None, skip_empty=True, skip_lines=0, **kwargs):
    """
    Load an ASCII file to list of lists.
    
@@ -77,9 +79,6 @@ def read2list(filename, commentchar='#', splitchar=None, skip_empty=True, skip_l
       else:
             data.append(fw2python(line,splitchar))
    ff.close()
-   
-   #-- report that the file has been read
-   logger.debug('Data file %s read'%(filename))
    
    #-- and return the contents
    return data,comm
