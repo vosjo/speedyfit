@@ -39,6 +39,7 @@ def lnlike(pars, derived_properties, y, yerr, **kwargs):
    #-- add distance to extra derived parameter (which already contains luminosities)
    #   distance is converted from Rsol to pc
    extra_drv['d'] = np.sqrt(1/scales)/44365810.04823812 
+   extra_drv['scale'] = scales
    extra_drv['chi2'] = chi2
    
    return -chi2/2, extra_drv

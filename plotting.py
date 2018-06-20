@@ -11,6 +11,7 @@ from scipy.stats import gaussian_kde
 from ivs.sed import filters, model
 
 import statfunc
+import model as model2
 
 def format_parameter(name, value):
    
@@ -145,7 +146,7 @@ def plot_constraints(constraints, samples, results):
       pl.title(par)
 
  
-def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', plot_components=True):
+def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], result='best', plot_components=True):
    
    pars = pars.copy()
    
@@ -155,8 +156,8 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
    #grid1 = dict(grid='kurucz2', z=0, Rv=3.1)
    grid1 = dict(grid='tmap', z=0, Rv=3.1)
    #grid1 = dict(grid='blackbody')
-   #grid2 = dict(grid='kurucz2', z=0, Rv=3.1)
-   grid2 = dict(grid='tmap', z=0, Rv=3.1)
+   grid2 = dict(grid='kurucz2', z=0, Rv=3.1)
+   #grid2 = dict(grid='tmap', z=0, Rv=3.1)
    #grid2 = dict(grid='wd_da', z=0, Rv=3.1)
    #grid2 = dict(grid='blackbody')
    model.set_defaults_multiple(grid1,grid2)
@@ -183,13 +184,11 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, result='best', pl
          ipars[key] = [value[resi]]
          pars[key] = value[resi]
       
-      syn, Labs = model.get_itable_pix(photbands=photbands, **ipars)
+      #syn, Labs = model.get_itable_pix(photbands=photbands, **ipars)
+      syn, Labs = model2.get_itable(grid=grids, **ipars)
       syn = syn[:,0]
       
-      ratio = (obs/syn)[~colors]
-      weights = (obs/obs_err)[~colors]
-      scale = np.average(ratio,weights=weights)
-      
+      scale = pars['scale']
       
    
    # plot the fit of the absolute data
