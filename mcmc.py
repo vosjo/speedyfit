@@ -192,6 +192,9 @@ def MCMC(obs, obs_err, photbands,
    blobs = blobs[accept]
    probabilities = probabilities[accept]
    
+   if len(samples) == 0:
+      raise ValueError('No models were accepted, all probabilities were -inf')
+   
    #-- convert to recarrays
    dtypes = [(n, 'f8') for n in pnames]
    samples = np.array([tuple(s) for s in samples], dtype=dtypes)

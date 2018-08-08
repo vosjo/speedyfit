@@ -55,51 +55,49 @@ plot2:
 
 default_double = """
 # photometry file with index to the columns containing the photbands, observations and errors
-photometryfile: path/to/file.dat
-photband_index: 0
-obs_index: 1
-err_index: 2
+photometryfile: <photfilename>
+photband_index: 4
+obs_index: 10
+err_index: 11
 # parameters to fit and the limits on them in same order as parameters
 pnames: [teff, logg, rad, teff2, logg2, rad2, ebv]
 limits:
-- [3500, 6000]
-- [3.5, 5.0]
-- [0.7, 1.5]
-- [20000, 40000]
+- [3500, 10000]
+- [4.31, 4.31]
+- [0.01, 1.5]
+- [20000, 50000]
 - [4.5, 6.5]
-- [0.05, 0.3]
+- [0.01, 0.5]
 - [0, 0.02]
 # constraints on distance and mass ratio if known
 constraints:
   q: [3.03, 0.2]
   distance: [600, 50] # in parsec
 # added constraints on derived properties as mass, luminosity, luminosity ratio
-derived_limits:
-  mass: [0.5, 1.0]
-  mass2: [0.1, 1.0]
+derived_limits: {}
 # path to the model grids with integrated photometry
 grids: 
-- path/to/grid/1.fits
-- path/to/grid/2.fits
+- /home/joris/Python/ivsdata/sedtables/modelgrids/ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits
+- /home/joris/Python/ivsdata/sedtables/modelgrids/iTMAP2012_sdOB_extended_lawfitzpatrick2004_Rv3.10.fits
 # setup for the MCMC algorithm
 nwalkers: 100    # total number of walkers
-nsteps: 2000     # steps taken by each walker (not including burn-in)
-nrelax: 500      # burn-in steps taken by each walker
+nsteps: 500     # steps taken by each walker (not including burn-in)
+nrelax: 250      # burn-in steps taken by each walker
 a: 10            # relative size of the steps taken
 # set the percentiles for the error determination 
 percentiles: [16, 50, 84] # 16 - 84 corresponds to 1 sigma
 # output options
-datafile: none   # filepath to write results of all walkers
+#datafile: none   # filepath to write results of all walkers
 plot1:
  type: sed_fit
- path: sed_fit.png
+ #path: <objectname>_sed_binary.png
 plot2:
  type: distribution
- path: distribution_primary.png
+ #path: <objectname>_distribution_primary.png
  parameters: ['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2']
 plot3:
  type: distribution
- path: distribution_derived.png
+ #path: <objectname>_distribution_derived.png
  parameters: ['mass', 'L', 'mass2', 'L2', 'q', 'd']
 """
 
@@ -114,7 +112,7 @@ if __name__=="__main__":
    if not args.empty is None:
       
       objectname = args.filename
-      filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_double.yaml'
+      filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_binary.yaml'
       
       out = default_single if args.empty == 'single' else default_double
       out = out.replace('<photfilename>', objectname + '.phot')
@@ -260,13 +258,13 @@ if __name__=="__main__":
       results[p] = [results[p], v, e1, e2]
       pars[p] = v
    
-   #-- calculate the Chi2 of the 50th percentile results
-   y_syn, extra_drv = model.get_itable(**pars)
-   chi2, _, _ = stat_func(obs,
-                         obs_err,
-                         colors, y_syn, pars,
-                         constraints=constraints)
-   results['chi2'] = [results['chi2'][0], chi2, results['chi2'][2], results['chi2'][3]]
+   ##-- calculate the Chi2 of the 50th percentile results
+   #y_syn, extra_drv = model.get_itable(**pars)
+   #chi2, _, _ = stat_func(obs,
+                         #obs_err,
+                         #colors, y_syn, pars,
+                         #constraints=constraints)
+   #results['chi2'] = [results['chi2'][0], chi2, results['chi2'][2], results['chi2'][3]]
    
    
    print "   Par             Best        Pc       emin       emax"
@@ -311,7 +309,7 @@ if __name__=="__main__":
          
          pl.figure(i)
          pl.subplots_adjust(wspace=0.25)
-         plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints, result=res)
+         plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints, grids=grids, result=res)
          
          if not setup[pindex].get('path', None) is None:
             pl.savefig(setup[pindex].get('path', 'sed_fit.png'))
