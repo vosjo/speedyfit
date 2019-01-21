@@ -3,10 +3,15 @@ import ConfigParser
 
 import numpy as np
 
+from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
 from astroquery.utils.tap.core import TapPlus
 
 from astropy import units as u
+from astropy.coordinates.angles import Angle
+from astropy.coordinates import SkyCoord
+
+from numpy.lib.recfunctions import append_fields
 
 # always request the distance of the observations to the search coordinates and sort on increasing distance
 v = Vizier(columns=["*", '+_r']) 
@@ -72,43 +77,79 @@ def tap_query(ra, dec, catalog):
    tp = TapPlus(url=catalog)
    
    table = tap_info.get(catalog, 'table')
+   print table
    
    keywords = ""
    bands = []
    for band in tap_info.options(catalog):
       if 'table' in band: continue
+      if 'rakw' in band: continue
+      if 'deckw' in band: continue
       if '_unit' in band: continue
       if '_err' in band: continue
       if 'bibcode' in band: continue
-      keywords += band + ", " + "e_" + band + ", "
+      
+      errkw = tap_info.get(catalog, band+'_err') if tap_info.has_option(catalog, band+'_err') else 'e_'+band
+
+      keywords += band + ", " + errkw + ", "
       bands.append(band)
       
    if keywords[-2:] == ", ":
       keywords = keywords[0:-2]
+      
+   rakw = tap_info.get(catalog, 'rakw') if tap_info.has_option(catalog, 'rakw') else 'raj2000'
+   deckw = tap_info.get(catalog, 'deckw') if tap_info.has_option(catalog, 'deckw') else 'dej2000'
    
-   query = """SELECT 
-   DISTANCE(POINT('ICRS', raj2000, dej2000),
-            POINT('ICRS', {ra:}, {dec:})) AS dist, {kws:}
-   FROM {table:} AS m
-   WHERE 
-      1=CONTAINS(POINT('ICRS', raj2000, dej2000),
-                 CIRCLE('ICRS', {ra:}, {dec:}, 10/3600. ))
-   ORDER BY dist""".format(ra=ra, dec=dec, table=table, kws=keywords)
+   try:
+      #-- first try to query with distance
+      query = """SELECT 
+      DISTANCE(POINT('ICRS', {rakw:}, {deckw}),
+               POINT('ICRS', {ra:}, {dec:})) AS dist, {kws:}
+      FROM {table:} AS m
+      WHERE 
+         1=CONTAINS(POINT('ICRS', {rakw:}, {deckw}),
+                  CIRCLE('ICRS', {ra:}, {dec:}, 0.005 ))
+      ORDER BY dist""".format(ra=ra, dec=dec, table=table, rakw=rakw, deckw=deckw, kws=keywords)
+      
+      job = tp.launch_job(query) 
+      
+      results = job.get_results()
+   except Exception:
+      #-- not all catalogs accept a distance sorted query, we have to hope that the correct star is returned.
+      query = """SELECT {rakw:} as RA, {deckw} as DE, {kws:}
+      FROM {table:} AS m
+      WHERE 
+         1=CONTAINS(POINT('ICRS', {rakw:}, {deckw}),
+                  CIRCLE('ICRS', {ra:}, {dec:}, 0.005 ))
+      """.format(ra=ra, dec=dec, table=table, rakw=rakw, deckw=deckw, kws=keywords)
+      
+      job = tp.launch_job(query) 
+      
+      results = job.get_results()
    
-   job = tp.launch_job(query) 
-   
-   results = job.get_results()
-   
-   distance = (results['dist'][0] * u.degree).to(u.arcsec).value
+   #-- get the distance from the query result or calculate it.
+   if 'dist' in results.dtype.names:
+      distance = (results['dist'][0] * u.degree).to(u.arcsec).value
+   else:
+      c1 = SkyCoord(ra * u.degree, dec * u.degree)
+      distance = SkyCoord(results['ra'][0] * u.degree, results['de'][0] * u.degree).separation(c1).to(u.arcsec).value
+      
+      
    bibcode = tap_info.get(catalog, 'bibcode')
    
+   #-- get the photometric measurements, errors and units
    photometry = []
    for band in bands:
       bandname = tap_info.get(catalog, band)
       value = results[band][0]
-      err = results["e_"+band][0]
-      unit = results[band].unit
       
+      errkw = tap_info.get(catalog, band+'_err') if tap_info.has_option(catalog, band+'_err') else 'e_'+band
+      err = results[errkw][0]
+      
+      if tap_info.has_option(catalog, band+'_unit'):
+         unit = tap_info.get(catalog, band+'_unit')
+      else:
+         unit = results[band].unit
       
       photometry.append(( bandname, value, err, unit, distance, bibcode))
       
@@ -124,16 +165,46 @@ def get_tap_photometry(ra, dec):
    photometry = np.array([], dtype=dtypes)
    
    for catalog in catalogs:
+      
       phot_ = tap_query(ra, dec, catalog)
       photometry = np.hstack([photometry, phot_])
       
    return photometry
-      
 
-photometry = get_tap_photometry(030.3931577216772, -53.7287603837835)
+def get_photometry(objectname):
+   
+   from ivs.sed import filters
+   from ivs.units import conversions as cv
+   
+   data = Simbad.query_object(objectname)
+   ra = Angle(data['RA'][0], unit='hour').degree
+   dec = Angle(data['DEC'][0], unit='degree').degree
+   
+   photometry = get_tap_photometry(ra, dec)
 
-photometry_ = get_vizier_photometry("JL277")
+   photometry_ = get_vizier_photometry(objectname)
 
-photometry = np.hstack([photometry, photometry_])
+   photometry = np.hstack([photometry, photometry_])
+   
+   #-- convert magnitudes to fluxes
+   wave, flux, err = [], [], []
+   for band, meas, emeas, unit in zip(photometry['band'], photometry['meas'], photometry['emeas'], photometry['unit']):
+      if np.isnan(emeas): emeas = 0.02
+      f_, e_ = cv.convert(unit, 'erg/s/cm2/AA', meas, emeas, photband=band)
+      wave.append(filters.eff_wave(band))
+      flux.append(f_)
+      err.append(e_)
+   
+   
+   photometry = append_fields(photometry, ['flux', 'eflux'], [flux, err], usemask=False)
+   
+   import pylab as pl
+   pl.errorbar(wave, flux, yerr=err, marker='.', ls='')
+   pl.loglog(wave, flux, marker='o', ls='')
+   pl.show()
+   
+   return photometry
+
+photometry = get_photometry('HE0430-2457')
 
 print photometry
