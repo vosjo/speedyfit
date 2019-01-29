@@ -1,7 +1,11 @@
 
+import os
+
 import ConfigParser
 
 import numpy as np
+
+import fileio
 
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
@@ -13,23 +17,25 @@ from astropy.coordinates import SkyCoord
 
 from numpy.lib.recfunctions import append_fields
 
+filedir = os.path.dirname(os.path.abspath(__file__))
+
 # always request the distance of the observations to the search coordinates and sort on increasing distance
 v = Vizier(columns=["*", '+_r']) 
 
 #-- read in catalog information
-cat_info = ConfigParser.ConfigParser()
-cat_info.optionxform = str # make sure the options are case sensitive
-cat_info.readfp(open('vizier_cats_phot.cfg'))
+viz_info = ConfigParser.ConfigParser()
+viz_info.optionxform = str # make sure the options are case sensitive
+viz_info.readfp(open(filedir+'/vizier_cats_phot.cfg'))
 
 
 tap_info = ConfigParser.ConfigParser()
 tap_info.optionxform = str # make sure the options are case sensitive
-tap_info.readfp(open('tap_cats_phot.cfg'))
+tap_info.readfp(open(filedir+'/tap_cats_phot.cfg'))
 
 
 def get_vizier_photometry(objectname, radius=5):
    
-   catalogs = cat_info.sections()
+   catalogs = viz_info.sections()
 
    data = v.query_object(objectname, catalog=catalogs, radius=radius*u.arcsec)
    
@@ -39,28 +45,30 @@ def get_vizier_photometry(objectname, radius=5):
       
       distance = (data[catalog]['_r'][0] * u.arcmin).to(u.arcsec).value
       
-      if cat_info.has_option(catalog, 'bibcode'):
-         bibcode = cat_info.get(catalog, 'bibcode')
+      if viz_info.has_option(catalog, 'bibcode'):
+         bibcode = viz_info.get(catalog, 'bibcode')
       else:
-         bibcode = ''
+         bibcode = '-'
       
-      for band in cat_info.options(catalog):
+      print catalog
+      
+      for band in viz_info.options(catalog):
          
          if '_unit' in band: continue
          if '_err' in band: continue
          if 'bibcode' in band: continue
          
-         bandname = cat_info.get(catalog, band)
+         bandname = viz_info.get(catalog, band)
          value = data[catalog][band][0]
          
-         errkw = cat_info.get(catalog, band+'_err') if cat_info.has_option(catalog, band+'_err') else 'e_'+band
+         errkw = viz_info.get(catalog, band+'_err') if viz_info.has_option(catalog, band+'_err') else 'e_'+band
          try:
             err = data[catalog][errkw][0]
          except:
             err = 0.05
          
-         if cat_info.has_option(catalog, band+'_unit'):
-            unit = cat_info.get(catalog, band+'_unit')
+         if viz_info.has_option(catalog, band+'_unit'):
+            unit = viz_info.get(catalog, band+'_unit')
          else:
             unit = data[catalog][band].unit
          
@@ -127,6 +135,10 @@ def tap_query(ra, dec, catalog):
       
       results = job.get_results()
    
+   if len(results) == 0:
+      dtypes = [('band', 'a20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', 'a10'), ('distance', 'f8'), ('bibcode', 'a20')]
+      return np.array([], dtype=dtypes)
+   
    #-- get the distance from the query result or calculate it.
    if 'dist' in results.dtype.names:
       distance = (results['dist'][0] * u.degree).to(u.arcsec).value
@@ -171,7 +183,7 @@ def get_tap_photometry(ra, dec):
       
    return photometry
 
-def get_photometry(objectname):
+def get_photometry(objectname, filename=None):
    
    from ivs.sed import filters
    from ivs.units import conversions as cv
@@ -184,7 +196,7 @@ def get_photometry(objectname):
 
    photometry_ = get_vizier_photometry(objectname)
 
-   photometry = np.hstack([photometry, photometry_])
+   photometry = np.hstack([photometry_, photometry_])
    
    #-- convert magnitudes to fluxes
    wave, flux, err = [], [], []
@@ -195,16 +207,23 @@ def get_photometry(objectname):
       flux.append(f_)
       err.append(e_)
    
+   print flux, err
    
-   photometry = append_fields(photometry, ['flux', 'eflux'], [flux, err], usemask=False)
+   photometry = append_fields(photometry, ['flux', 'eflux'], data=[flux, err], 
+                              dtypes=['f8', 'f8'], usemask=False)
    
-   import pylab as pl
-   pl.errorbar(wave, flux, yerr=err, marker='.', ls='')
-   pl.loglog(wave, flux, marker='o', ls='')
-   pl.show()
+   print photometry
+   
+   if not filename is None:
+      fileio.write_array(photometry, filename, auto_width=True, header=True, use_float='%e')
+   
+   #import pylab as pl
+   #pl.errorbar(wave, flux, yerr=err, marker='.', ls='')
+   #pl.loglog(wave, flux, marker='o', ls='')
+   #pl.show()
    
    return photometry
 
-photometry = get_photometry('HE0430-2457')
+#photometry = get_photometry('SB 705', 'SB_705.phot')
 
-print photometry
+#print photometry

@@ -8,22 +8,22 @@ import corner
 
 from numpy.lib.recfunctions import append_fields
 
-import mcmc, model, plotting, fileio
+import mcmc, model, plotting, fileio, photometry_query
 
 from ivs.io import ascii
 
 default_single = """
 # photometry file with index to the columns containing the photbands, observations and errors
 photometryfile: <photfilename>
-photband_index: 4
-obs_index: 10
-err_index: 11
+photband_index: 0
+obs_index: 6
+err_index: 7
 # parameters to fit and the limits on them in same order as parameters
 pnames: [teff, logg, rad, ebv]
 limits:
-- [3500, 8000]
-- [2.50, 4.50]
-- [1.0, 15.0]
+- [20000, 60000]
+- [5.00, 6.00]
+- [0.01, 0.5]
 - [0, 0.02]
 # constraints on distance and mass ratio is known
 constraints: 
@@ -32,7 +32,7 @@ constraints:
 derived_limits: {}
 # path to the model grids with integrated photometry
 grids: 
-- /home/joris/Python/ivsdata/sedtables/modelgrids/ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits
+- /home/joris/Python/ivsdata/sedtables/modelgrids/iTMAP2012_sdOB_extended_lawfitzpatrick2004_Rv3.10.fits
 # setup for the MCMC algorithm
 nwalkers: 100    # total number of walkers
 nsteps: 1000     # steps taken by each walker (not including burn-in)
@@ -50,15 +50,15 @@ plot2:
  type: distribution
  show_best: true
  path: <objectname>_distribution_single.png
- parameters: ['teff', 'logg', 'rad', 'L', 'd']
+ parameters: ['teff', 'logg', 'rad', 'L', 'd', 'mass']
 """
 
 default_double = """
 # photometry file with index to the columns containing the photbands, observations and errors
 photometryfile: <photfilename>
-photband_index: 4
-obs_index: 10
-err_index: 11
+photband_index: 0
+obs_index: 6
+err_index: 7
 # parameters to fit and the limits on them in same order as parameters
 pnames: [teff, logg, rad, teff2, logg2, rad2, ebv]
 limits:
@@ -107,6 +107,7 @@ if __name__=="__main__":
    parser.add_argument('filename', action="store", type=str, help='use setup given in this file')
    parser.add_argument("-empty", dest='empty', type=str, default=None,
                        help="Create empty setup file ('single' or 'double')")
+   parser.add_argument('--phot', dest='photometry', action='store_true', help='When creating a new setupfile, use this option to also download photometry from Vizier and Tap archives.')
    args, variables = parser.parse_known_args()
    
    if not args.empty is None:
@@ -121,6 +122,9 @@ if __name__=="__main__":
       ofile = open(filename, 'w')
       ofile.write(out)
       ofile.close()
+      
+      if args.photometry:
+         photometry = photometry_query.get_photometry(objectname, filename = objectname + '.phot')
       
       sys.exit()
    
