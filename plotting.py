@@ -14,6 +14,7 @@ from scipy.stats import gaussian_kde
 
 import statfunc
 import model
+import filters
 
 def format_parameter(name, value):
    
@@ -156,9 +157,9 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
    resi = 0 if result == 'best' else 1
    
    
-   colors = np.array([model.is_color(p) for p in photbands])
+   colors = np.array([filters.is_color(p) for p in photbands])
    psystems = np.array([p.split('.')[0] for p in photbands])
-   waves = np.array([model.eff_wave(p) for p in photbands[~colors]])
+   waves = np.array([filters.eff_wave(p) for p in photbands[~colors]])
    
    #-- def system colors
    all_systems = set(psystems)
@@ -216,7 +217,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
       s = np.where((psystems == system) & (~colors))
       if len(obs[s]) == 0: continue
    
-      w = np.array([model.eff_wave(p) for p in photbands[s]])
+      w = np.array([filters.eff_wave(p) for p in photbands[s]])
       pl.errorbar(w, obs[s], yerr=obs_err[s], ls='', marker='o', 
                   color=system_colors[system], label=system)
    
@@ -233,7 +234,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
    ax2 = ax1.twiny()
    ax2.set_xscale("log", nonposx='clip')
    ax2.set_xlim(abs_xlim)
-   waves = np.array([model.eff_wave(p) for p in photbands[~colors]])
+   waves = np.array([filters.eff_wave(p) for p in photbands[~colors]])
    bandnames = np.array([b.split('.')[-1] for b in photbands[~colors]])
    ax2.set_xticks(waves)
    ax2.set_xticklabels(bandnames)
@@ -253,7 +254,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
       s = np.where((psystems == system) & (~colors))
       if len(obs[s]) == 0: continue
       
-      w = np.array([model.eff_wave(p) for p in photbands[s]])
+      w = np.array([filters.eff_wave(p) for p in photbands[s]])
       y = ((obs - syn*scale) / obs)[s]
       yerr = (obs_err / obs)[s]
       

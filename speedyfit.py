@@ -8,7 +8,7 @@ import corner
 
 from numpy.lib.recfunctions import append_fields
 
-import mcmc, model, plotting, fileio
+import mcmc, model, plotting, fileio, filters
 
 from ivs.io import ascii
 
@@ -150,7 +150,7 @@ if __name__=="__main__":
    obs_err = np.array(data[setup['err_index']], dtype=float)
    
    #-- remove colors
-   color = np.array([model.is_color(p) for p in photbands])
+   color = np.array([filters.is_color(p) for p in photbands])
    s = np.where(~color)
    photbands, obs, obs_err = photbands[s], obs[s], obs_err[s]
    

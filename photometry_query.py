@@ -5,7 +5,7 @@ import ConfigParser
 
 import numpy as np
 
-import fileio
+import fileio, filters
 
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
@@ -209,9 +209,6 @@ def get_tap_photometry(ra, dec):
 
 def get_photometry(objectname, filename=None):
    
-   from ivs.sed import filters
-   from ivs.units import conversions as cv
-   
    #-- get the object coodinates
    ra, dec = get_coordinate(objectname)
    
@@ -227,7 +224,9 @@ def get_photometry(objectname, filename=None):
    wave, flux, err = [], [], []
    for band, meas, emeas, unit in zip(photometry['band'], photometry['meas'], photometry['emeas'], photometry['unit']):
       if np.isnan(emeas) or emeas < 0: emeas = 0.02
-      f_, e_ = cv.convert(unit, 'erg/s/cm2/AA', meas, emeas, photband=band)
+      
+      f_, e_ = filters.mag2flux(meas, emeas, band)
+      
       wave.append(filters.eff_wave(band))
       flux.append(f_)
       err.append(e_)

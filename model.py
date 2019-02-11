@@ -4,7 +4,7 @@ import numpy as np
  
 from astropy.io import fits 
 
-import interpol
+import interpol, filters
 
 from ivs.aux import loggers
 logger = loggers.get_basic_logger()
@@ -265,7 +265,7 @@ def _get_flux_from_table(fits_ext,photbands,index=None,include_Labs=True):
    fluxes = []
    for photband in photbands:
       try:
-         if not is_color(photband):
+         if not filters.is_color(photband):
             fluxes.append(fits_ext.data.field(photband)[index])
          else:
             system,color = photband.split('.')
@@ -292,41 +292,4 @@ def _get_flux_from_table(fits_ext,photbands,index=None,include_Labs=True):
    if index is not None:
       fluxes = fluxes
    return fluxes
-
-
-from astropy.io import ascii
-basedir = os.path.dirname(__file__)
-
-def is_color(photband):
-   """
-   Return true if the photometric passband is actually a color.
-   
-   @param photband: name of the photometric passband
-   @type photband: string
-   @return: True or False
-   @rtype: bool
-   """
-   if '-' in photband.split('.')[1]:
-      return True
-   elif photband.split('.')[1].upper() in ['M1','C1']:
-      return True
-   else:
-      return False
-
-
-def eff_wave(photband):
-   """
-   Returns the effective wavelength of the pass band in angstrom
-   
-   @param photband: name of the photometric passband
-   @type photband: string
-   @return: effective wavelength
-   @rtype: float
-   """
-   
-   data = ascii.read(os.path.join(basedir, 'zeropoints.dat'), comment="\s*#")
-   
-   s = np.where(data['photband'] == photband)
-   
-   return data['eff_wave'][s][0]
 
