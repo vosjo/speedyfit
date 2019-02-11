@@ -1,4 +1,5 @@
 import re
+import os
 import numpy as np
  
 from astropy.io import fits 
@@ -7,6 +8,35 @@ import interpol
 
 from ivs.aux import loggers
 logger = loggers.get_basic_logger()
+
+__defaults__ = dict(grid='kurucz2',
+                    directory='/home/joris/Python/ivsdata/sedtables/modelgrids/')
+defaults = __defaults__.copy()
+
+
+def get_grid_file(integrated=False, **kwargs):
+   
+   grid = kwargs.get('grid', defaults['grid'])
+   
+   if os.path.isfile(grid):
+      return grid
+   
+   if grid == 'kurucz2':
+      filename = 'kurucz93_z0.0_k2odfnew_sed'
+      
+   elif grid == 'tmap':
+      filename = 'TMAP2012_sdOB_extended'
+      
+   elif grid == 'blackbody':
+      filename = 'blackbody_discint'
+      
+   if integrated:
+      filename = 'i' + filename + '_lawfitzpatrick2004_Rv3.10'
+   
+   directory = kwargs.get('directory', defaults['directory'])
+   
+   return directory + filename + '.fits'
+
 
 def load_grids(gridnames, pnames, limits, photbands):
    """
@@ -28,7 +58,8 @@ def load_grids(gridnames, pnames, limits, photbands):
       
    return grids
 
-def prepare_grid(photbands, gridfilename,
+
+def prepare_grid(photbands, gridname,
                  teffrange=(-np.inf,np.inf),loggrange=(-np.inf,np.inf),
                  ebvrange=(-np.inf,np.inf),
                  variables=['teff','logg','ebv'],**kwargs):
@@ -36,6 +67,8 @@ def prepare_grid(photbands, gridfilename,
    flux = []
    grid_pars = []
    grid_names = np.array(variables)
+   
+   gridfilename = get_grid_file(integrated=True, grid=gridname)
    
    with fits.open(gridfilename) as ff:
       #-- make an alias for further reference
@@ -139,6 +172,80 @@ def get_itable(grid=[], **kwargs):
    fluxes = np.sum(fluxes,axis=0)
    return fluxes, Labs
 
+def get_table_single(teff=None, logg=None, ebv=0.0, **kwargs):
+   """
+   No interpolating, just returns the closest gridpoint
+   """
+   
+   #-- get the grid
+   gridname = kwargs['grid']
+   gridfilename = get_grid_file(integrated=False, grid=gridname)
+   
+   hdu = fits.open(gridfilename)
+   
+   teffs, loggs = np.zeros(len(hdu)-1), np.zeros(len(hdu)-1)
+   for i in range(1,len(hdu)):
+      teffs[i-1] = hdu[i].header['TEFF']
+      loggs[i-1] = hdu[i].header['LOGG']
+   
+   dteff = abs(teffs-teff)/teff
+   dlogg = abs(loggs-logg)/logg
+   
+   s = np.where(np.sqrt(dteff**2 + dlogg**2) == np.min(np.sqrt(dteff**2 + dlogg**2)))
+   
+   model = hdu[s[0][0]+1].data
+   wave, flux = model['wavelength'], model['flux']
+   
+   #-- Take radius into account when provided
+   if 'rad' in kwargs:
+      rad = np.array(kwargs['rad'])
+      flux = flux*rad**2
+   
+   return wave, flux
+   
+def get_table(grid=[], **kwargs):
+   """
+   Returns the closest model atmosphere available in the grid. No interpolation is done!
+   """
+   values, parameters, components = {}, set(), set()
+   for key in kwargs.keys():
+      if re.search("^(teff|logg|g|ebv|rad)\d?$", key):
+         par, comp = re.findall("^(teff|logg|g|ebv|rad)(\d?)$", key)[0]
+         values[key] = kwargs.pop(key)
+         parameters.add(par)
+         components.add(comp)
+   
+   # need to check here that grid is same length as components
+   if hasattr(grid, '__iter__'):
+      grids = grid
+   else:
+      grids = [grid]
+   
+   #-- If there is only one component, we can directly return the result
+   if len(components) == 1:
+      kwargs.update(values)
+      wave, flux = get_table_single(grid=grids[0], **kwargs)
+      return wave, flux
+   
+   waves, fluxes = [], []
+   for i, (comp, grid) in enumerate(zip(components,grids)):
+      kwargs_ = kwargs.copy()
+      for par in parameters:
+         kwargs_[par] = values[par+comp] if par+comp in values else values[par]
+      
+      w, f = get_table_single(grid=grid, **kwargs_)
+      
+      waves.append(w)
+      fluxes.append(f)
+   
+   #-- interpolate and combine the models
+   wave = waves[0]
+   flux = np.zeros_like(wave)
+   for w, f in zip(waves, fluxes):
+      flux += np.interp(wave, w, f)
+   
+   return wave, flux
+   
 
 def _get_flux_from_table(fits_ext,photbands,index=None,include_Labs=True):
    """
@@ -186,18 +293,40 @@ def _get_flux_from_table(fits_ext,photbands,index=None,include_Labs=True):
       fluxes = fluxes
    return fluxes
 
+
+from astropy.io import ascii
+basedir = os.path.dirname(__file__)
+
 def is_color(photband):
-    """
-    Return true if the photometric passband is actually a color.
-    
-    @param photband: name of the photometric passband
-    @type photband: string
-    @return: True or False
-    @rtype: bool
-    """
-    if '-' in photband.split('.')[1]:
-        return True
-    elif photband.split('.')[1].upper() in ['M1','C1']:
-        return True
-    else:
-        return False
+   """
+   Return true if the photometric passband is actually a color.
+   
+   @param photband: name of the photometric passband
+   @type photband: string
+   @return: True or False
+   @rtype: bool
+   """
+   if '-' in photband.split('.')[1]:
+      return True
+   elif photband.split('.')[1].upper() in ['M1','C1']:
+      return True
+   else:
+      return False
+
+
+def eff_wave(photband):
+   """
+   Returns the effective wavelength of the pass band in angstrom
+   
+   @param photband: name of the photometric passband
+   @type photband: string
+   @return: effective wavelength
+   @rtype: float
+   """
+   
+   data = ascii.read(os.path.join(basedir, 'zeropoints.dat'), comment="\s*#")
+   
+   s = np.where(data['photband'] == photband)
+   
+   return data['eff_wave'][s][0]
+

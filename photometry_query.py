@@ -33,6 +33,30 @@ tap_info.optionxform = str # make sure the options are case sensitive
 tap_info.readfp(open(filedir+'/tap_cats_phot.cfg'))
 
 
+def get_coordinate(objectname):
+   
+   if objectname[0] == 'J' and objectname[1] != 'L':
+      name = objectname[1:]
+      if '+' in name:
+         ra, dec = name.split('+')
+         sign = '+'
+      else:
+         ra, dec = name.split('-')
+         sign = '-'
+      
+      ra = "{}:{}:{}".format(ra[0:2], ra[2:4], ra[4:])
+      dec = "{}{}:{}:{}".format(sign, dec[0:2], dec[2:4], dec[4:])
+      
+      ra = Angle(ra, unit='hour').degree
+      dec = Angle(dec, unit='degree').degree
+      
+   else:
+      data = Simbad.query_object(objectname)
+      ra = Angle(data['RA'][0], unit='hour').degree
+      dec = Angle(data['DEC'][0], unit='degree').degree
+      
+   return ra, dec
+
 def get_vizier_photometry(objectname, radius=5):
    
    catalogs = viz_info.sections()
@@ -188,26 +212,25 @@ def get_photometry(objectname, filename=None):
    from ivs.sed import filters
    from ivs.units import conversions as cv
    
-   data = Simbad.query_object(objectname)
-   ra = Angle(data['RA'][0], unit='hour').degree
-   dec = Angle(data['DEC'][0], unit='degree').degree
+   #-- get the object coodinates
+   ra, dec = get_coordinate(objectname)
    
+   #-- query tap catalogs
    photometry = get_tap_photometry(ra, dec)
+   
+   #-- query Vizier catalogs
+   photometry_ = get_vizier_photometry("{} {}".format(ra, dec))
 
-   photometry_ = get_vizier_photometry(objectname)
-
-   photometry = np.hstack([photometry_, photometry_])
+   photometry = np.hstack([photometry, photometry_])
    
    #-- convert magnitudes to fluxes
    wave, flux, err = [], [], []
    for band, meas, emeas, unit in zip(photometry['band'], photometry['meas'], photometry['emeas'], photometry['unit']):
-      if np.isnan(emeas): emeas = 0.02
+      if np.isnan(emeas) or emeas < 0: emeas = 0.02
       f_, e_ = cv.convert(unit, 'erg/s/cm2/AA', meas, emeas, photband=band)
       wave.append(filters.eff_wave(band))
       flux.append(f_)
       err.append(e_)
-   
-   print flux, err
    
    photometry = append_fields(photometry, ['flux', 'eflux'], data=[flux, err], 
                               dtypes=['f8', 'f8'], usemask=False)
@@ -224,6 +247,22 @@ def get_photometry(objectname, filename=None):
    
    return photometry
 
+def get_parallax(objectname, radius=5):
+   
+   #data = Simbad.query_object(objectname)
+   #ra = Angle(data['RA'][0], unit='hour').degree
+   #dec = Angle(data['DEC'][0], unit='degree').degree
+   
+   v_gaia = Vizier(columns=["Plx", "e_Plx", '+_r']) 
+      
+   data = v_gaia.query_object(objectname, catalog=['I/345/gaia2'], radius=radius*u.arcsec)
+   
+   return data['I/345/gaia2']['Plx'][0], data['I/345/gaia2']['e_Plx'][0]
+   
+
 #photometry = get_photometry('SB 705', 'SB_705.phot')
 
 #print photometry
+
+
+#get_parallax('SB 705', radius=5)

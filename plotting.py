@@ -1,4 +1,6 @@
 
+import os 
+
 import numpy as np
 import pylab as pl
 
@@ -8,10 +10,10 @@ import matplotlib.ticker as ticker
 
 from scipy.stats import gaussian_kde
 
-from ivs.sed import filters, model
+#from ivs.sed import filters #, model
 
 import statfunc
-import model as model2
+import model
 
 def format_parameter(name, value):
    
@@ -146,28 +148,17 @@ def plot_constraints(constraints, samples, results):
       pl.title(par)
 
  
-def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], result='best', plot_components=True):
+def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnames=[], result='best', plot_components=True, plot_colors=False, plot_constraints=False):
    
    pars = pars.copy()
    
    # use model from 'best' results or 'pc' results
    resi = 0 if result == 'best' else 1
    
-   #grid1 = dict(grid='kurucz2', z=0, Rv=3.1)
-   grid1 = dict(grid='tmap', z=0, Rv=3.1)
-   #grid1 = dict(grid='blackbody')
-   grid2 = dict(grid='kurucz2', z=0, Rv=3.1)
-   #grid2 = dict(grid='tmap', z=0, Rv=3.1)
-   #grid2 = dict(grid='wd_da', z=0, Rv=3.1)
-   #grid2 = dict(grid='blackbody')
-   model.set_defaults_multiple(grid1,grid2)
    
-   model.set_defaults(**grid1)
-   
-   
-   colors = np.array([filters.is_color(p) for p in photbands])
+   colors = np.array([model.is_color(p) for p in photbands])
    psystems = np.array([p.split('.')[0] for p in photbands])
-   waves = np.array([filters.eff_wave(p) for p in photbands[~colors]])
+   waves = np.array([model.eff_wave(p) for p in photbands[~colors]])
    
    #-- def system colors
    all_systems = set(psystems)
@@ -184,8 +175,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], result=
          ipars[key] = [value[resi]]
          pars[key] = value[resi]
       
-      #syn, Labs = model.get_itable_pix(photbands=photbands, **ipars)
-      syn, Labs = model2.get_itable(grid=grids, **ipars)
+      syn, Labs = model.get_itable(grid=grids, **ipars)
       syn = syn[:,0]
       
       scale = pars['scale']
@@ -193,7 +183,10 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], result=
    
    # plot the fit of the absolute data
    #====================================
-   ax1 = pl.subplot2grid((3,3), (0, 0), colspan=2, rowspan=2)
+   if not plot_colors and not plot_constraints:
+      ax1 = pl.subplot2grid((3,3), (0, 0), colspan=3, rowspan=2)
+   else:
+      ax1 = pl.subplot2grid((3,3), (0, 0), colspan=2, rowspan=2)
    
    
    if not len(pars.keys()) == 0:
@@ -201,19 +194,20 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], result=
       #-- synthetic integrated fluxes
       pl.plot(waves, scale*syn[~colors], 'xr')
       
-      #-- synthetic model
-      wave, flux = model.get_table(**pars)
-      pl.plot(wave, scale*flux, '-r')
-      
-      #-- plot components
-      if plot_components and 'teff2' in pars:
-         model.set_defaults(**grid1)
-         wave, flux = model.get_table(teff=pars['teff'], logg=pars['logg'], rad=pars['rad'], ebv=pars['ebv'])
-         pl.plot(wave, scale*flux, '--g')
+      #-- if possible, plot a non integrated model
+      #   can only be done if provided gridnames are not paths to integrated files.
+      if len(gridnames) > 0 and not os.path.isfile(gridnames[0]):
+         #-- synthetic model
+         wave, flux = model.get_table(grid=gridnames, **pars)
+         pl.plot(wave, scale*flux, '-r')
          
-         model.set_defaults(**grid2)
-         wave, flux = model.get_table(teff=pars['teff2'], logg=pars['logg2'], rad=pars['rad2'], ebv=pars['ebv'])
-         pl.plot(wave, scale*flux, '--b')
+         #-- plot components
+         if plot_components and 'teff2' in pars:
+            wave, flux = model.get_table(grid=gridnames[0], teff=pars['teff'], logg=pars['logg'], rad=pars['rad'], ebv=pars['ebv'])
+            pl.plot(wave, scale*flux, '--g')
+            
+            wave, flux = model.get_table(grid=gridnames[1], teff=pars['teff2'], logg=pars['logg2'], rad=pars['rad2'], ebv=pars['ebv'])
+            pl.plot(wave, scale*flux, '--b')
          
          
       
@@ -222,7 +216,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], result=
       s = np.where((psystems == system) & (~colors))
       if len(obs[s]) == 0: continue
    
-      w = np.array([filters.eff_wave(p) for p in photbands[s]])
+      w = np.array([model.eff_wave(p) for p in photbands[s]])
       pl.errorbar(w, obs[s], yerr=obs_err[s], ls='', marker='o', 
                   color=system_colors[system], label=system)
    
@@ -239,7 +233,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], result=
    ax2 = ax1.twiny()
    ax2.set_xscale("log", nonposx='clip')
    ax2.set_xlim(abs_xlim)
-   waves = np.array([filters.eff_wave(p) for p in photbands[~colors]])
+   waves = np.array([model.eff_wave(p) for p in photbands[~colors]])
    bandnames = np.array([b.split('.')[-1] for b in photbands[~colors]])
    ax2.set_xticks(waves)
    ax2.set_xticklabels(bandnames)
@@ -250,20 +244,23 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], result=
    
    # plot O-C of the absolute measurements
    #====================================
-   ax = pl.subplot2grid((3,3), (2, 0), colspan=2, rowspan=1)
+   if not plot_colors and not plot_constraints:
+      ax = pl.subplot2grid((3,3), (2, 0), colspan=3, rowspan=1)
+   else:
+      ax = pl.subplot2grid((3,3), (2, 0), colspan=2, rowspan=1)
    
    for system in all_systems:
       s = np.where((psystems == system) & (~colors))
       if len(obs[s]) == 0: continue
       
-      w = np.array([filters.eff_wave(p) for p in photbands[s]])
+      w = np.array([model.eff_wave(p) for p in photbands[s]])
       y = ((obs - syn*scale) / obs)[s]
       yerr = (obs_err / obs)[s]
       
       y = 2.5*np.log10(syn[s]*scale / obs[s])
       yerr = 2.5 / np.log(10.0) * obs_err[s] / obs[s]
       
-      pl.errorbar(w, y , yerr=yerr, ls='', marker='o', color=system_colors[system])
+      pl.errorbar(w, -y , yerr=yerr, ls='', marker='o', color=system_colors[system])
    
    pl.figtext(0.96, 0.96, '$\chi^2$ = {:0.2f}'.format(pars['chi2']), ha='right')
    
@@ -278,10 +275,10 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], result=
 
    # plot O-C of the color fits
    #====================================
-   ax = pl.subplot2grid((3,3), (0, 2), colspan=1, rowspan=2)
-   
-   if len(obs[colors]) > 0:
-   
+   if len(obs[colors]) > 0 and plot_colors:
+      
+      ax = pl.subplot2grid((3,3), (0, 2), colspan=1, rowspan=2)
+      
       y = np.array(range(len(obs[colors])))
       x = obs[colors] - syn[colors]
       x_err = obs_err[colors]
@@ -309,37 +306,38 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], result=
    
    # plot fractional O-C of the constraints
    #=======================================
-   ax = pl.subplot2grid((3,3), (2, 2), colspan=1, rowspan=1)
-   
-   x, xticknames = [], []
-   
-   if 'q' in constraints:
+   if plot_constraints:
+      ax = pl.subplot2grid((3,3), (2, 2), colspan=1, rowspan=1)
       
-      q, ql, qu = constraints['q']
+      x, xticknames = [], []
       
-      ax.plot([1], pars['q'], 'k_', ms=15, mew=2)
-      ax.errorbar([1], [q], yerr = [[ql], [qu]], marker='o')
-      
-      x.append(1)
-      xticknames.append('q')
-   
-   
-   if 'distance' in constraints:
-      
-      ax2 = ax.twinx()
-      
-      d  = constraints['distance'][0] / 44365810.04823812
-      de = constraints['distance'][1] / 44365810.04823812
+      if 'q' in constraints:
+         
+         q, ql, qu = constraints['q']
+         
+         ax.plot([1], pars['q'], 'k_', ms=15, mew=2)
+         ax.errorbar([1], [q], yerr = [[ql], [qu]], marker='o')
+         
+         x.append(1)
+         xticknames.append('q')
       
       
-      ax2.plot([2], pars['d'], 'k_', ms=15, mew=2)
-      ax2.errorbar([2], [d], yerr = de, marker='o')
+      if 'distance' in constraints:
+         
+         ax2 = ax.twinx()
+         
+         d  = constraints['distance'][0] / 44365810.04823812
+         de = constraints['distance'][1] / 44365810.04823812
+         
+         
+         ax2.plot([2], pars['d'], 'k_', ms=15, mew=2)
+         ax2.errorbar([2], [d], yerr = de, marker='o')
+         
+         x.append(2)
+         xticknames.append('distance')
       
-      x.append(2)
-      xticknames.append('distance')
-   
-   pl.xlim([0.5, 2.5])
-   pl.xticks(x, xticknames)
+      pl.xlim([0.5, 2.5])
+      pl.xticks(x, xticknames)
    
    
    pl.figtext(0.03, 0.96, 'model = {}'.format(result))

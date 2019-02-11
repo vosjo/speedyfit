@@ -8,7 +8,7 @@ import corner
 
 from numpy.lib.recfunctions import append_fields
 
-import mcmc, model, plotting, fileio, photometry_query
+import mcmc, model, plotting, fileio
 
 from ivs.io import ascii
 
@@ -22,12 +22,12 @@ err_index: 7
 pnames: [teff, logg, rad, ebv]
 limits:
 - [20000, 60000]
-- [5.00, 6.00]
+- [5.80, 5.80]
 - [0.01, 0.5]
-- [0, 0.02]
+- [0, 0.10]
 # constraints on distance and mass ratio is known
 constraints: 
-  parallax: [99, 99]
+  parallax: [<plx>, <e_plx>]
 # added constraints on derived properties as mass, luminosity, luminosity ratio
 derived_limits: {}
 # path to the model grids with integrated photometry
@@ -50,7 +50,7 @@ plot2:
  type: distribution
  show_best: true
  path: <objectname>_distribution_single.png
- parameters: ['teff', 'logg', 'rad', 'L', 'd', 'mass']
+ parameters: ['teff', 'rad', 'L', 'ebv', 'd', 'mass']
 """
 
 default_double = """
@@ -66,13 +66,12 @@ limits:
 - [4.31, 4.31]
 - [0.01, 1.5]
 - [20000, 50000]
-- [4.5, 6.5]
+- [5.8, 5.8]
 - [0.01, 0.5]
-- [0, 0.02]
+- [0, 0.10]
 # constraints on distance and mass ratio if known
 constraints:
-  q: [3.03, 0.2]
-  distance: [600, 50] # in parsec
+  parallax: [<plx>, <e_plx>]
 # added constraints on derived properties as mass, luminosity, luminosity ratio
 derived_limits: {}
 # path to the model grids with integrated photometry
@@ -94,11 +93,11 @@ plot1:
 plot2:
  type: distribution
  #path: <objectname>_distribution_primary.png
- parameters: ['teff', 'logg', 'rad', 'teff2', 'logg2', 'rad2']
+ parameters: ['teff', 'rad', 'teff2', 'rad2', 'ebv', 'd']
 plot3:
  type: distribution
  #path: <objectname>_distribution_derived.png
- parameters: ['mass', 'L', 'mass2', 'L2', 'q', 'd']
+ parameters: ['mass', 'L', 'mass2', 'L2', 'q']
 """
 
 if __name__=="__main__":
@@ -112,12 +111,18 @@ if __name__=="__main__":
    
    if not args.empty is None:
       
+      import photometry_query
+      
       objectname = args.filename
       filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_binary.yaml'
+      
+      plx, e_plx = photometry_query.get_parallax(objectname)
       
       out = default_single if args.empty == 'single' else default_double
       out = out.replace('<photfilename>', objectname + '.phot')
       out = out.replace('<objectname>', objectname)
+      out = out.replace('<plx>', str(plx))
+      out = out.replace('<e_plx>', str(e_plx))
       
       ofile = open(filename, 'w')
       ofile.write(out)
@@ -313,7 +318,7 @@ if __name__=="__main__":
          
          pl.figure(i)
          pl.subplots_adjust(wspace=0.25)
-         plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints, grids=grids, result=res)
+         plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints, grids=grids, gridnames=gridnames, result=res)
          
          if not setup[pindex].get('path', None) is None:
             pl.savefig(setup[pindex].get('path', 'sed_fit.png'))
