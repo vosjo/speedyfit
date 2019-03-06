@@ -29,6 +29,9 @@ def get_grid_file(integrated=False, **kwargs):
       
    elif grid == 'blackbody':
       filename = 'blackbody_discint'
+   
+   else:
+      raise ValueError('Grid name ({}) not recognized!'.format(grid))
       
    if integrated:
       filename = 'i' + filename + '_lawfitzpatrick2004_Rv3.10'
@@ -101,9 +104,6 @@ def prepare_grid(photbands, gridname,
 
 def get_itable_single(teff=None, logg=None, g=None, ebv=0.0, **kwargs):
    
-   #-- get the grid
-   axis_values, pixelgrid = kwargs['grid']
-   
    #-- check if logg or g is given
    if logg is None and not g is None:
       logg = np.log10(g)
@@ -115,6 +115,17 @@ def get_itable_single(teff=None, logg=None, g=None, ebv=0.0, **kwargs):
       logg = np.array(logg)
       ebv = np.array(ebv)
       multiple = True
+   
+   #-- get the grid from the keyword, or prepare it if a grid name is given
+   if isinstance(kwargs['grid'], str):
+      axis_values,grid_pars,pixelgrid,grid_names = prepare_grid(kwargs['photbands'], kwargs['grid'],
+                 teffrange=(np.min(teff), np.max(teff)),loggrange=(np.min(logg), np.max(logg)),
+                 ebvrange=(np.min(ebv), np.max(ebv)),
+                 variables=['teff','logg','ebv'])
+   else:
+      axis_values, pixelgrid = kwargs['grid']
+   
+   
    
    p = np.vstack([teff, logg, ebv])
    
@@ -128,7 +139,11 @@ def get_itable_single(teff=None, logg=None, g=None, ebv=0.0, **kwargs):
    if 'rad' in kwargs:
       rad = np.array(kwargs['rad'])
       flux,Labs = flux*rad**2, Labs*rad**2
-      
+   
+   if 'd' in kwargs:
+      d = np.array(kwargs['d'])
+      flux,Labs = flux/d**2, Labs*d**2
+   
    if multiple:
       flux = flux.flatten()
       Labs = Labs.flatten()
@@ -147,7 +162,11 @@ def get_itable(grid=[], **kwargs):
          components.add(comp)
    
    # need to check here that grid is same length as components
-   if hasattr(grid, '__iter__') and  hasattr(grid[0], '__iter__') and len(grid[0]) == 2:
+   if isinstance(grid, str):
+      grids = [grid]
+   elif hasattr(grid, '__iter__') and isinstance(grid[0], str):
+      grids = grid
+   elif hasattr(grid, '__iter__') and  hasattr(grid[0], '__iter__') and len(grid[0]) == 2:
       grids = grid
    else:
       grids = [grid]
@@ -200,6 +219,10 @@ def get_table_single(teff=None, logg=None, ebv=0.0, **kwargs):
    if 'rad' in kwargs:
       rad = np.array(kwargs['rad'])
       flux = flux*rad**2
+      
+   if 'd' in kwargs:
+      d = np.array(kwargs['d'])
+      flux = flux/d**2
    
    return wave, flux
    
@@ -283,6 +306,7 @@ def _get_flux_from_table(fits_ext,photbands,index=None,include_Labs=True):
                fb = fits_ext.data.field('STROMGREN.B')[index]
                fluxes.append(fu*fb/fv**2)
       except KeyError:
+         print 'Passband %s missing from table'%(photband)
          logger.warning('Passband %s missing from table'%(photband))
          fluxes.append(np.nan*np.ones(len(fits_ext.data)))
    #-- possibly include absolute luminosity

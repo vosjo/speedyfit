@@ -14,6 +14,7 @@ from ivs.io import ascii
 
 default_single = """
 # photometry file with index to the columns containing the photbands, observations and errors
+objectname: <objectname>
 photometryfile: <photfilename>
 photband_index: 0
 obs_index: 6
@@ -32,7 +33,7 @@ constraints:
 derived_limits: {}
 # path to the model grids with integrated photometry
 grids: 
-- /home/joris/Python/ivsdata/sedtables/modelgrids/iTMAP2012_sdOB_extended_lawfitzpatrick2004_Rv3.10.fits
+- tmap
 # setup for the MCMC algorithm
 nwalkers: 100    # total number of walkers
 nsteps: 1000     # steps taken by each walker (not including burn-in)
@@ -55,6 +56,7 @@ plot2:
 
 default_double = """
 # photometry file with index to the columns containing the photbands, observations and errors
+objectname: <objectname>
 photometryfile: <photfilename>
 photband_index: 0
 obs_index: 6
@@ -76,8 +78,8 @@ constraints:
 derived_limits: {}
 # path to the model grids with integrated photometry
 grids: 
-- /home/joris/Python/ivsdata/sedtables/modelgrids/ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits
-- /home/joris/Python/ivsdata/sedtables/modelgrids/iTMAP2012_sdOB_extended_lawfitzpatrick2004_Rv3.10.fits
+- kurucz2
+- tmap
 # setup for the MCMC algorithm
 nwalkers: 100    # total number of walkers
 nsteps: 500     # steps taken by each walker (not including burn-in)
@@ -305,6 +307,8 @@ if __name__=="__main__":
       fileio.write2fits(samples, datafile, setup=setup_str)
    
    
+   fileio.write_summary2hdf5(setup['objectname'], obs, obs_err, photbands, pars=results, grids=setup['grids'], filename=None)
+   
    #-- Plotting 
    
    for i in range(10):
@@ -318,7 +322,7 @@ if __name__=="__main__":
          
          pl.figure(i)
          pl.subplots_adjust(wspace=0.25)
-         plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints, grids=grids, gridnames=gridnames, result=res)
+         plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints, grids=setup['grids'], gridnames=gridnames, result=res)
          
          if not setup[pindex].get('path', None) is None:
             pl.savefig(setup[pindex].get('path', 'sed_fit.png'))

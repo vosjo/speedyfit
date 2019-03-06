@@ -277,3 +277,154 @@ def read_fits(filename):
    
    return samples, str(setup)
    
+
+def write_summary2hdf5(objectname, obs, obs_err, photbands, pars={}, grids=[], filename=None):
+   """
+   Writes the obeservations and results to hdf5 format readable by AOTS
+   """
+   from astropy.table import Table
+   import model
+   import filters
+   from photometry_query import get_coordinate
+   
+   if filename is None: filename = objectname + '_sedfit.hdf5'
+   f = h5py.File(filename, "w")
+   
+   ra, dec = get_coordinate(objectname)
+      
+   f.attrs['systemname'] = objectname
+   f.attrs['ra'] = ra
+   f.attrs['dec'] = dec
+   
+   f.attrs['name'] = 'SED fit'
+   f.attrs['note'] = ''
+   f.attrs['type'] = 'sedfit'
+   
+   pars = pars.copy()
+   
+   # use model from 'best' results or 'pc' results
+   result = 'best'
+   resi = 0 if result == 'best' else 1
+   
+   
+   colors = np.array([filters.is_color(p) for p in photbands])
+   waves = np.array([filters.eff_wave(p) for p in photbands[~colors]])
+   obsdata = Table([waves, photbands, obs[~colors], obs_err[~colors]], names=['wave', 'photband', 'flux', 'flux_err'])
+   
+   #-- create the data group
+   data = f.create_group('DATA')
+   data.attrs['xlabel'] = 'Wavelength (AA)'
+   data.attrs['ylabel'] = 'flux'
+   data.attrs['xmin'] = np.min(waves)
+   data.attrs['xmax'] = np.max(waves)
+   data.attrs['xscale'] = 'log'
+   data.attrs['yscale'] = 'log'
+   
+   obs = data.create_dataset('Obs', data=obsdata)
+   obs.attrs['label'] = 'OBS'
+   obs.attrs['datatype'] = 'discrete'
+   obs.attrs['xpar'] = 'wave'
+   obs.attrs['ypar'] = 'flux'
+   
+   
+   def get_unit(par):
+      
+      if 'teff' in par: return 'K'
+      if 'logg' in par: return 'dex'
+      if 'L' in par: return 'Lsol'
+      if 'd' in par: return 'pc'
+      if 'rad' in par: return 'Rsol'
+      if 'ebv' in par: return ''
+   
+      return ''
+   
+   if not len(pars.keys()) == 0:
+      
+      
+      #-- create parameters
+      group = f.create_group('PARAMETERS')
+      ipars = pars.copy()
+      for key, value in pars.items():
+         
+         ipars[key] = [value[resi]]
+         pars[key] = value[resi]
+         
+         if key == 'scale' or key == 'chi2' or key == 'mass': continue
+         
+         pg = group.create_group(key)
+         pg.attrs['unit'] = get_unit(key)
+         pg.attrs['value'] = value[resi]
+         pg.attrs['err'] = value[2]
+         if key == 'g' or key == 'logg':
+            pg.attrs['valid'] = False
+         else:
+            pg.attrs['valid'] = True
+         
+         
+      _ = ipars.pop('d')
+      _ = pars.pop('d')
+      
+      
+       #-- create the model group
+      group = f.create_group('MODEL')
+      group.attrs['xlabel'] = 'Wavelength (AA)'
+      group.attrs['ylabel'] = 'Flux'
+      #group.attrs['xmin'] = 0.
+      #group.attrs['xmax'] = 1.
+      
+      
+      syn, Labs = model.get_itable(grid=grids, photbands=photbands, **ipars)
+      syn = syn[:,0]
+      
+      scale = pars['scale']
+      
+      
+      itable = Table([waves, scale*syn], names=['wave', 'flux'])
+      
+      itb = group.create_dataset('Iflux', data=itable)
+      itb.attrs['label'] = 'Synth. photometry'
+      itb.attrs['datatype'] = 'discrete'
+      itb.attrs['xpar'] = 'wave'
+      itb.attrs['ypar'] = 'flux'
+      
+      
+      #-- if possible, plot a non integrated model
+      #   can only be done if provided gridnames are not paths to integrated files.
+      if len(grids) > 0 and not os.path.isfile(grids[0]):
+         #-- synthetic model
+         wave, flux = model.get_table(grid=grids, **pars)
+         s = np.where((wave > np.min(waves)-1000) & (wave < np.max(waves) + 1000))
+         table = Table([wave[s], scale*flux[s]], names=['wave', 'flux'])
+         
+         name = 'binary' if 'teff2' in pars else grids[0]
+         tb = group.create_dataset(name, data=table)
+         tb.attrs['label'] = name
+         tb.attrs['datatype'] = 'continuous'
+         tb.attrs['xpar'] = 'wave'
+         tb.attrs['ypar'] = 'flux'
+         
+         
+         #-- plot components
+         if 'teff2' in pars:
+            wave, flux = model.get_table(grid=grids[0], teff=pars['teff'], logg=pars['logg'], rad=pars['rad'], ebv=pars['ebv'])
+            s = np.where((wave > np.min(waves)-1000) & (wave < np.max(waves) + 1000))
+            table1 = Table([wave[s], scale*flux[s]], names=['wave', 'flux'])
+            
+            tb1 = group.create_dataset(grids[0], data=table1)
+            tb1.attrs['label'] = grids[0]
+            tb1.attrs['datatype'] = 'continuous'
+            tb1.attrs['xpar'] = 'wave'
+            tb1.attrs['ypar'] = 'flux'
+            
+            wave, flux = model.get_table(grid=grids[1], teff=pars['teff2'], logg=pars['logg2'], rad=pars['rad2'], ebv=pars['ebv'])
+            s = np.where((wave > np.min(waves)-1000) & (wave < np.max(waves) + 1000))
+            table2 = Table([wave[s], scale*flux[s]], names=['wave', 'flux'])
+            
+            tb2 = group.create_dataset(grids[1], data=table2)
+            tb2.attrs['label'] = grids[1]
+            tb2.attrs['datatype'] = 'continuous'
+            tb2.attrs['xpar'] = 'wave'
+            tb2.attrs['ypar'] = 'flux'
+            
+            
+   f.close()

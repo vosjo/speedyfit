@@ -175,12 +175,18 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
       for key, value in pars.items():
          ipars[key] = [value[resi]]
          pars[key] = value[resi]
+      _ = ipars.pop('d')
+      _ = pars.pop('d')
       
-      syn, Labs = model.get_itable(grid=grids, **ipars)
+      print ipars
+      print photbands
+      
+      syn, Labs = model.get_itable(grid=grids, photbands=photbands, **ipars)
       syn = syn[:,0]
       
       scale = pars['scale']
       
+      print syn*scale
    
    # plot the fit of the absolute data
    #====================================

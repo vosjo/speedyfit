@@ -81,6 +81,7 @@ def get_vizier_photometry(objectname, radius=5):
          if '_unit' in band: continue
          if '_err' in band: continue
          if 'bibcode' in band: continue
+         if '-' in band: continue
          
          bandname = viz_info.get(catalog, band)
          value = data[catalog][band][0]

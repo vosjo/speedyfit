@@ -383,12 +383,12 @@ photband               eff_wave type    zp_corr          Flam0      source
  SDSS.UP                 3551.91 CCD        0.98    3.43499e-09     http://www.ucolick.org/~cnaw/sun.html                                
  SDSS.Z                  8936.17 CCD    0.516673    8.40621e-10     Maiz-Appellaniz2007                                                  
  SDSS.ZP                 10689.4 CCD        0.53    5.27087e-10     http://www.ucolick.org/~cnaw/sun.html                                
- SKYMAPPER.G             5027.14 CCD           0    4.54971e-09     nan                                                                  
- SKYMAPPER.I             7747.23 CCD           0     1.2504e-09     nan                                                                  
- SKYMAPPER.R             6100.76 CCD           0     2.6026e-09     nan                                                                  
- SKYMAPPER.U             3486.82 CCD           0    3.21506e-09     nan                                                                  
- SKYMAPPER.V             3832.37 CCD           0    5.51658e-09     nan                                                                  
- SKYMAPPER.Z             9115.16 CCD           0    8.03287e-10     nan                                                                  
+ SKYMAPPER.G             5027.14 CCD           0    4.41000e-09     ABmag_vosa                                                                  
+ SKYMAPPER.I             7747.23 CCD           0    1.83000e-09     ABmag_vosa                                                                  
+ SKYMAPPER.R             6100.76 CCD           0    2.98400e-09     ABmag_vosa                                                                  
+ SKYMAPPER.U             3486.82 CCD           0    8.89500e-09     ABmag_vosa                                                                  
+ SKYMAPPER.V             3832.37 CCD           0    7.26500e-09     ABmag_vosa                                                                  
+ SKYMAPPER.Z             9115.16 CCD           0    1.31700e-09     ABmag_vosa                                                                  
  SLOAN.I                 7732.95 CCD           0    1.26651e-09     nan                                                                  
  SLOAN.R                 6218.06 CCD           0    2.45948e-09     nan                                                                  
  SPIRE.250           2.47208e+06 BOL           0    3.08997e-19     nan                                                                  

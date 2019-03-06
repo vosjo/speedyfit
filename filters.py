@@ -50,11 +50,16 @@ def mag2flux(mag, error, photband):
    s = np.where(data['photband'] == photband)
    data = data[s]
    
+   print photband
+   
    F0 = data['Flam0'][0]
    zpcor = data['zp_corr'][0]
    
    flux = 10**(-(mag-zpcor)/2.5)*F0
    err = np.log(10) * error / 2.5 * flux
+   
+   if err == 0:
+      err = flux / 10
    
    return  flux, err
 
@@ -80,4 +85,4 @@ def flux2mag(flux, error, photband):
 
 if __name__=="__main__":
    
-   print mag2flux(13.0, 0.01, '2MASS.H')
+   print (mag2flux(13.0, 0.01, '2MASS.H'))
