@@ -278,7 +278,7 @@ def read_fits(filename):
    return samples, str(setup)
    
 
-def write_summary2hdf5(objectname, obs, obs_err, photbands, pars={}, grids=[], filename=None):
+def write_summary2hdf5(objectname, samples, obs, obs_err, photbands, pars={}, grids=[], filename=None):
    """
    Writes the obeservations and results to hdf5 format readable by AOTS
    """
@@ -320,11 +320,11 @@ def write_summary2hdf5(objectname, obs, obs_err, photbands, pars={}, grids=[], f
    data.attrs['xscale'] = 'log'
    data.attrs['yscale'] = 'log'
    
-   obs = data.create_dataset('Obs', data=obsdata)
-   obs.attrs['label'] = 'OBS'
-   obs.attrs['datatype'] = 'discrete'
-   obs.attrs['xpar'] = 'wave'
-   obs.attrs['ypar'] = 'flux'
+   obsgr = data.create_dataset('Obs', data=obsdata)
+   obsgr.attrs['label'] = 'OBS'
+   obsgr.attrs['datatype'] = 'discrete'
+   obsgr.attrs['xpar'] = 'wave'
+   obsgr.attrs['ypar'] = 'flux'
    
    
    def get_unit(par):
@@ -332,8 +332,8 @@ def write_summary2hdf5(objectname, obs, obs_err, photbands, pars={}, grids=[], f
       if 'teff' in par: return 'K'
       if 'logg' in par: return 'dex'
       if 'L' in par: return 'Lsol'
-      if 'd' in par: return 'pc'
       if 'rad' in par: return 'Rsol'
+      if 'd' in par: return 'pc'
       if 'ebv' in par: return ''
    
       return ''
@@ -349,7 +349,7 @@ def write_summary2hdf5(objectname, obs, obs_err, photbands, pars={}, grids=[], f
          ipars[key] = [value[resi]]
          pars[key] = value[resi]
          
-         if key == 'scale' or key == 'chi2' or key == 'mass': continue
+         if key == 'scale' or key == 'chi2' or key == 'mass' or key == 'logg': continue
          
          pg = group.create_group(key)
          pg.attrs['unit'] = get_unit(key)
@@ -360,6 +360,17 @@ def write_summary2hdf5(objectname, obs, obs_err, photbands, pars={}, grids=[], f
          else:
             pg.attrs['valid'] = True
          
+         y, x = np.histogram(samples[key], 20, density=False)
+         x = (x[0:-1] + x[1:])/2.
+         y = y / np.float(np.max(y))
+         
+         dis = Table([x, y], names=['x', 'y'])
+         
+         
+         disgr = pg.create_dataset('DISTRIBUTION', data=dis)
+         disgr.attrs['datatype'] = 'bars'
+         disgr.attrs['xpar'] = 'x'
+         disgr.attrs['ypar'] = 'y'
          
       _ = ipars.pop('d')
       _ = pars.pop('d')
@@ -427,4 +438,23 @@ def write_summary2hdf5(objectname, obs, obs_err, photbands, pars={}, grids=[], f
             tb2.attrs['ypar'] = 'flux'
             
             
+         #-- create the O-C data
+         group = f.create_group('O-C')
+         group.attrs['xlabel'] = 'Wavelength (AA)'
+         group.attrs['ylabel'] = 'O-C (mag)'
+         group.attrs['xscale'] = 'log'
+         group.attrs['xmin'] = np.min(waves)-1000
+         group.attrs['xmax'] = np.max(waves)+1000
+         
+         
+         y = 2.5*np.log10(syn*scale / obs[~colors])
+         yerr = 2.5 / np.log(10.0) * obs_err[~colors] / obs[~colors]
+         obsdata = Table([waves, y, yerr], names=['wave', 'o-c', 'o-c_err'])
+         
+         octb = group.create_dataset('Obs', data=obsdata)
+         octb.attrs['label'] = 'Obs - Calc'
+         octb.attrs['datatype'] = 'discrete'
+         octb.attrs['xpar'] = 'wave'
+         octb.attrs['ypar'] = 'o-c'
+               
    f.close()

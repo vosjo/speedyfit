@@ -50,8 +50,6 @@ def mag2flux(mag, error, photband):
    s = np.where(data['photband'] == photband)
    data = data[s]
    
-   print photband
-   
    F0 = data['Flam0'][0]
    zpcor = data['zp_corr'][0]
    

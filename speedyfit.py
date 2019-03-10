@@ -91,10 +91,10 @@ percentiles: [16, 50, 84] # 16 - 84 corresponds to 1 sigma
 #datafile: none   # filepath to write results of all walkers
 plot1:
  type: sed_fit
- #path: <objectname>_sed_binary.png
+ path: <objectname>_sed_binary.png
 plot2:
  type: distribution
- #path: <objectname>_distribution_primary.png
+ path: <objectname>_distribution_primary.png
  parameters: ['teff', 'rad', 'teff2', 'rad2', 'ebv', 'd']
 plot3:
  type: distribution
@@ -307,7 +307,7 @@ if __name__=="__main__":
       fileio.write2fits(samples, datafile, setup=setup_str)
    
    
-   fileio.write_summary2hdf5(setup['objectname'], obs, obs_err, photbands, pars=results, grids=setup['grids'], filename=None)
+   fileio.write_summary2hdf5(setup['objectname'], samples, obs, obs_err, photbands, pars=results, grids=setup['grids'], filename=None)
    
    #-- Plotting 
    
