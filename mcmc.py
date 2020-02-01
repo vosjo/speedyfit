@@ -159,30 +159,14 @@ def MCMC(obs, obs_err, photbands,
    #================
    # MCMC part
    
-   #-- burn in (let walkers relax before starting to store results)
-   if nrelax > 0:
-      print "\nBurn In"
-      for i, result in enumerate(sampler.sample(pos, iterations=nrelax, storechain=False)):
-         if (i+1) % 100 == 0:
-            print("{0:5.1%}".format(float(i) / nrelax))
-            
-      sampler.clear_blobs()
-      sampler.reset()
-      pos = result[0]
+   #-- run the sampler, both burn in and actual run in one
+   sampler.run_mcmc(pos, nsteps+nrelax, progress=True)
    
-   
-   print "\nRun"
-   #-- run the sampler
-   for i, result in enumerate(sampler.sample(pos, iterations=nsteps)):
-      if (i+1) % 100 == 0:
-         print("{0:5.1%}".format(float(i) / nsteps))
-   
-   
-   #-- combine the results from the individual walkers 
-   samples = sampler.flatchain
-   blobs = np.array(sampler.blobs).T.flatten()
-   probabilities = sampler.flatlnprobability
-   
+   #-- combine the results from the individual walkers discarding the burn in steps
+   samples = sampler.get_chain(discard=nrelax, thin=1, flat=True)
+   blobs = sampler.get_blobs(discard=nrelax, thin=1, flat=True)
+   probabilities = sampler.get_log_prob(discard=nrelax, thin=1, flat=True)
+
    #-- clear the samples to save memory
    sampler.reset()
    
