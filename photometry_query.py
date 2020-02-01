@@ -147,7 +147,11 @@ def tap_query(ra, dec, catalog):
       job = tp.launch_job(query) 
       
       results = job.get_results()
-   except Exception:
+      
+   except Exception, e:
+      
+      print "problem", e
+      
       #-- not all catalogs accept a distance sorted query, we have to hope that the correct star is returned.
       query = """SELECT {rakw:} as RA, {deckw} as DE, {kws:}
       FROM {table:} AS m
@@ -234,8 +238,6 @@ def get_photometry(objectname, filename=None):
    
    photometry = append_fields(photometry, ['flux', 'eflux'], data=[flux, err], 
                               dtypes=['f8', 'f8'], usemask=False)
-   
-   print photometry
    
    if not filename is None:
       fileio.write_array(photometry, filename, auto_width=True, header=True, use_float='%e')

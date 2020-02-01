@@ -10,8 +10,6 @@ from numpy.lib.recfunctions import append_fields
 
 import mcmc, model, plotting, fileio, filters
 
-from ivs.io import ascii
-
 default_single = """
 # photometry file with index to the columns containing the photbands, observations and errors
 objectname: <objectname>
@@ -66,7 +64,7 @@ pnames: [teff, logg, rad, teff2, logg2, rad2, ebv]
 limits:
 - [3500, 10000]
 - [4.31, 4.31]
-- [0.01, 1.5]
+- [0.01, 2.5]
 - [20000, 50000]
 - [5.8, 5.8]
 - [0.01, 0.5]
@@ -96,10 +94,10 @@ plot2:
  type: distribution
  path: <objectname>_distribution_primary.png
  parameters: ['teff', 'rad', 'teff2', 'rad2', 'ebv', 'd']
-plot3:
- type: distribution
- #path: <objectname>_distribution_derived.png
- parameters: ['mass', 'L', 'mass2', 'L2', 'q']
+#plot3:
+# type: distribution
+# #path: <objectname>_distribution_derived.png
+# parameters: ['mass', 'L', 'mass2', 'L2', 'q']
 """
 
 if __name__=="__main__":
@@ -111,7 +109,7 @@ if __name__=="__main__":
    parser.add_argument('--phot', dest='photometry', action='store_true', help='When creating a new setupfile, use this option to also download photometry from Vizier and Tap archives.')
    args, variables = parser.parse_known_args()
    
-   if not args.empty is None:
+   if args.empty is not None:
       
       import photometry_query
       
@@ -150,6 +148,13 @@ if __name__=="__main__":
    photbands = data[setup['photband_index']]
    obs = np.array(data[setup['obs_index']], dtype=float)
    obs_err = np.array(data[setup['err_index']], dtype=float)
+
+   nani = np.isnan(obs) | np.isnan(obs_err)
+   if any(nani):
+      print "Warning: there are NaN values in the following photometric bands:"
+      for p in photbands[nani]:
+         print "\t {}".format(p)
+   obs, obs_err, photbands = obs[~nani], obs_err[~nani], photbands[~nani]
    
    #-- remove colors
    color = np.array([filters.is_color(p) for p in photbands])
@@ -307,7 +312,7 @@ if __name__=="__main__":
       fileio.write2fits(samples, datafile, setup=setup_str)
    
    
-   fileio.write_summary2hdf5(setup['objectname'], samples, obs, obs_err, photbands, pars=results, grids=setup['grids'], filename=None)
+   #fileio.write_summary2hdf5(setup['objectname'], samples, obs, obs_err, photbands, pars=results, grids=setup['grids'], filename=None)
    
    #-- Plotting 
    

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
+import warnings
+
 
 def get_derived_properties(**pars):
    """
@@ -277,7 +279,13 @@ def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
    @return: chi-square, scale, e_scale
    @rtype: float,float,float
    """
-   
+
+   # check for NaNs in the observations
+   nani = np.isnan(meas) | np.isnan(e_meas)
+   if any(nani):
+      warnings.warn('{} of the observed magnitudes are NaN values! (NaN values are ignored)'.format(np.sum(nani)))
+   meas, e_meas, colors, syn = meas[~nani], e_meas[~nani], colors[~nani], syn[~nani]
+
    # First deal with Chi2 of the observations
    #=========================================
    #-- if syn represents only one measurement
@@ -289,7 +297,6 @@ def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
       e_scale = np.sqrt(np.dot(weights, (ratio-scale)**2)/weights.sum())
    else:
       scale,e_scale = 0,0
-   
    #-- we don't need to scale the colors, only the absolute fluxes
    chisq = np.where(colors, (syn-meas)**2/e_meas**2, (syn*scale-meas)**2/e_meas**2)
    
@@ -319,7 +326,7 @@ def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
          
          # append to chisq array
          chisq = np.append(chisq, chi2_c)
-   
+
    return chisq.sum(axis=0), scale, e_scale
   
 

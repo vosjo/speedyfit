@@ -10,11 +10,12 @@ import matplotlib.ticker as ticker
 
 from scipy.stats import gaussian_kde
 
-#from ivs.sed import filters #, model
-
 import statfunc
 import model
 import filters
+
+# TODO: add the reddening module in speedyfit
+from ivs.sed import reddening
 
 def format_parameter(name, value):
    
@@ -153,6 +154,8 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
    
    pars = pars.copy()
    
+   print pars
+   
    # use model from 'best' results or 'pc' results
    resi = 0 if result == 'best' else 1
    
@@ -186,6 +189,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
       
       scale = pars['scale']
       
+      print scale
       print syn*scale
    
    # plot the fit of the absolute data
@@ -205,15 +209,20 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
       #   can only be done if provided gridnames are not paths to integrated files.
       if len(gridnames) > 0 and not os.path.isfile(gridnames[0]):
          #-- synthetic model
+         ebv = pars['ebv']
          wave, flux = model.get_table(grid=gridnames, **pars)
+         flux = reddening.redden(flux,wave=wave,ebv=ebv,rtype='flux',law='fitzpatrick2004')
+         
          pl.plot(wave, scale*flux, '-r')
          
          #-- plot components
          if plot_components and 'teff2' in pars:
             wave, flux = model.get_table(grid=gridnames[0], teff=pars['teff'], logg=pars['logg'], rad=pars['rad'], ebv=pars['ebv'])
+            flux = reddening.redden(flux,wave=wave,ebv=ebv,rtype='flux',law='fitzpatrick2004')
             pl.plot(wave, scale*flux, '--g')
             
             wave, flux = model.get_table(grid=gridnames[1], teff=pars['teff2'], logg=pars['logg2'], rad=pars['rad2'], ebv=pars['ebv'])
+            flux = reddening.redden(flux,wave=wave,ebv=ebv,rtype='flux',law='fitzpatrick2004')
             pl.plot(wave, scale*flux, '--b')
          
          

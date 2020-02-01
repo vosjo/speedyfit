@@ -6,9 +6,6 @@ from astropy.io import fits
 
 import interpol, filters
 
-from ivs.aux import loggers
-logger = loggers.get_basic_logger()
-
 __defaults__ = dict(grid='kurucz2',
                     directory='/home/joris/Python/ivsdata/sedtables/modelgrids/')
 defaults = __defaults__.copy()
@@ -24,9 +21,15 @@ def get_grid_file(integrated=False, **kwargs):
    if grid == 'kurucz2':
       filename = 'kurucz93_z0.0_k2odfnew_sed'
       
+   elif grid == 'munari':
+      filename = 'Munari2005_extended'
+      
    elif grid == 'tmap':
       filename = 'TMAP2012_sdOB_extended'
-      
+   
+   elif grid == 'koester':
+      filename = 'Koester_WD_DA_2014_extended'
+   
    elif grid == 'blackbody':
       filename = 'blackbody_discint'
    
@@ -307,7 +310,6 @@ def _get_flux_from_table(fits_ext,photbands,index=None,include_Labs=True):
                fluxes.append(fu*fb/fv**2)
       except KeyError:
          print 'Passband %s missing from table'%(photband)
-         logger.warning('Passband %s missing from table'%(photband))
          fluxes.append(np.nan*np.ones(len(fits_ext.data)))
    #-- possibly include absolute luminosity
    if include_Labs:
