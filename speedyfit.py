@@ -40,7 +40,7 @@ a: 10            # relative size of the steps taken
 # set the percentiles for the error determination 
 percentiles: [0.2, 50, 99.8] # 16 - 84 corresponds to 1 sigma
 # output options
-#datafile: None
+resultfile: <objectname>_results_single.csv   # filepath to write results
 plot1:
  type: sed_fit
  result: pc
@@ -86,7 +86,7 @@ a: 10            # relative size of the steps taken
 # set the percentiles for the error determination 
 percentiles: [16, 50, 84] # 16 - 84 corresponds to 1 sigma
 # output options
-#datafile: none   # filepath to write results of all walkers
+resultfile: <objectname>_results_binary.csv   # filepath to write results
 plot1:
  type: sed_fit
  path: <objectname>_sed_binary.png
@@ -107,6 +107,8 @@ if __name__=="__main__":
    parser.add_argument("-empty", dest='empty', type=str, default=None,
                        help="Create empty setup file ('single' or 'double')")
    parser.add_argument('--phot', dest='photometry', action='store_true', help='When creating a new setupfile, use this option to also download photometry from Vizier and Tap archives.')
+   parser.add_argument('--noplot', dest='noplot', action='store_true',
+                       help="Don't show any plots, only store to disk.")
    args, variables = parser.parse_known_args()
    
    if args.empty is not None:
@@ -288,18 +290,38 @@ if __name__=="__main__":
       print "   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p]))
    
    
-   out = ""
-   out += "{:0.0f}\t{:0.0f}\t".format(results['teff'][1], np.average([results['teff'][2],results['teff'][3]]))
-   for par in ['logg', 'L', 'rad']:
-      out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
-                                         np.average([results[par][2],results[par][3]]))
+   # out = ""
+   # out += "{:0.0f}\t{:0.0f}\t".format(results['teff'][1], np.average([results['teff'][2],results['teff'][3]]))
+   # for par in ['logg', 'L', 'rad']:
+   #    out += "{:0.3f}\t{:0.3f}\t".format(results[par][1],
+   #                                       np.average([results[par][2],results[par][3]]))
+   # if 'teff2' in results:
+   #    out += "{:0.0f}\t{:0.0f}\t".format(results['teff2'][1], np.average([results['teff2'][2],results['teff2'][3]]))
+   #    for par in ['logg2', 'L2', 'rad2']:
+   #       out += "{:0.3f}\t{:0.3f}\t".format(results[par][1],
+   #                                        np.average([results[par][2],results[par][3]]))
+   # out += "{:0.0f}\t{:0.0f}\t".format(results['d'][1], np.average([results['d'][2],results['d'][3]]))
+   # print out
+
+   outpars, outvals = [], []
+   for par in ['teff', 'logg', 'L', 'rad']:
+      outpars.append(par)
+      outpars.append(par+'_err')
+      outvals.append(results[par][1])
+      outvals.append(np.average([results[par][2],results[par][3]]))
+
    if 'teff2' in results:
-      out += "{:0.0f}\t{:0.0f}\t".format(results['teff2'][1], np.average([results['teff2'][2],results['teff2'][3]]))
-      for par in ['logg2', 'L2', 'rad2']:
-         out += "{:0.3f}\t{:0.3f}\t".format(results[par][1], 
-                                          np.average([results[par][2],results[par][3]]))
-   out += "{:0.0f}\t{:0.0f}\t".format(results['d'][1], np.average([results['d'][2],results['d'][3]]))
-   print out
+      for par in ['teff2', 'logg2', 'L2', 'rad2']:
+         outpars.append(par)
+         outpars.append(par + '_err')
+         outvals.append(results[par][1])
+         outvals.append(np.average([results[par][2], results[par][3]]))
+
+   resultfile = setup.get('resultfile', None)
+   if resultfile is not None:
+      import pandas as pd
+      data = pd.DataFrame(data=[outvals], columns=outpars)
+      data.to_csv(resultfile, index=False)
    
    datafile = setup.get('datafile', None)
    if not datafile is None:
@@ -310,7 +332,8 @@ if __name__=="__main__":
       setupfile.close()
       
       fileio.write2fits(samples, datafile, setup=setup_str)
-   
+
+
    
    #fileio.write_summary2hdf5(setup['objectname'], samples, obs, obs_err, photbands, pars=results, grids=setup['grids'], filename=None)
    
@@ -367,6 +390,6 @@ if __name__=="__main__":
          
          if not setup[pindex].get('path', None) is None:
             pl.savefig(setup[pindex].get('path', 'distribution.png'))
-   
-      
-   pl.show()
+
+   if not args.noplot:
+      pl.show()
