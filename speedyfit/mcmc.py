@@ -3,7 +3,7 @@ from numpy.lib.recfunctions import merge_arrays
 
 import emcee
 
-import statfunc, model, filters
+from . import statfunc, model, filters
 
 def lnlike(pars, derived_properties, y, yerr, **kwargs):
     """
@@ -67,7 +67,7 @@ def lnprior(theta, derived_properties, limits, **kwargs):
         return -np.inf
 
     #-- check that all derived properties are within limits
-    for lim in derived_limits.keys():
+    for lim in list(derived_limits.keys()):
         if derived_properties[lim] < derived_limits[lim][0] or \
                 derived_properties[lim] > derived_limits[lim][1]:
             return -np.inf
@@ -182,7 +182,7 @@ def MCMC(obs, obs_err, photbands,
     dtypes = [(n, 'f8') for n in pnames]
     samples = np.array([tuple(s) for s in samples], dtype=dtypes)
 
-    names = blobs[0][0].keys()
+    names = list(blobs[0][0].keys())
     pars = []
     for b in blobs:
         pars.append(tuple([b[0][n] for n in names]))

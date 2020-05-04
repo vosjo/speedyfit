@@ -6,9 +6,9 @@ import numpy as np
 import pylab as pl
 import corner
 
-from numpy.lib.recfunctions import append_fields
+from numpy.lib.recfunctions import append_fields, repack_fields
 
-import mcmc, model, plotting, fileio, filters
+from . import mcmc, model, plotting, fileio, filters
 
 default_single = """
 # photometry file with index to the columns containing the photbands, observations and errors
@@ -114,7 +114,7 @@ def main():
    
    if args.empty is not None:
       
-      import photometry_query
+      from . import photometry_query
       
       objectname = args.filename
       filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_binary.yaml'
@@ -138,7 +138,7 @@ def main():
    
    if args.filename is None:
       
-      print "Nothing to do"
+      print("Nothing to do")
       sys.exit()
    
    #-- load the setup file
@@ -154,9 +154,9 @@ def main():
 
    nani = np.isnan(obs) | np.isnan(obs_err)
    if any(nani):
-      print "Warning: there are NaN values in the following photometric bands:"
+      print("Warning: there are NaN values in the following photometric bands:")
       for p in photbands[nani]:
-         print "\t {}".format(p)
+         print("\t {}".format(p))
    obs, obs_err, photbands = obs[~nani], obs_err[~nani], photbands[~nani]
    
    #-- remove colors
@@ -170,7 +170,7 @@ def main():
    
    #-- pars constraints
    constraints = setup['constraints']
-   for con, val in constraints.items():
+   for con, val in list(constraints.items()):
       if len(val) == 2:
          constraints[con] = [val[0], val[1], val[1]]
    
@@ -241,7 +241,7 @@ def main():
                                 a=a)
    
    #-- add fixed variables to results dictionary
-   for par, val in fixed_variables.items():
+   for par, val in list(fixed_variables.items()):
       results[par] = [val, val, 0, 0]
    
    #-- deal with the switch back to logg
@@ -267,9 +267,9 @@ def main():
    if 'g2' in names: names.remove('g2')
    samples = samples[names]
    
-   print "================================================================================"
-   print ""
-   print "Resulting parameter values and errors:"
+   print("================================================================================")
+   print("")
+   print("Resulting parameter values and errors:")
       
    pc  = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), percentiles, axis=0)
    pars = {}
@@ -286,9 +286,9 @@ def main():
    #results['chi2'] = [results['chi2'][0], chi2, results['chi2'][2], results['chi2'][3]]
    
    
-   print "   Par             Best        Pc       emin       emax"
+   print("   Par             Best        Pc       emin       emax")
    for p in samples.dtype.names:
-      print "   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p]))
+      print("   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p])))
    
    
    # out = ""
@@ -374,14 +374,13 @@ def main():
          for p in setup[pindex].get('parameters', ['teff', 'rad', 'L', 'd']):
             if p in samples.dtype.names: pars1.append(p)
          
-         data = samples[pars1]
+         data = repack_fields(samples[pars1])
          
          if setup[pindex].get('show_best', False):
             truths = [results[p][0] for p in data.dtype.names]
          else:
             truths = None
-         
-         
+
          fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)), 
                        labels = data.dtype.names,
                        quantiles=setup[pindex].get('quantiles', [0.025, 0.16, 0.5, 0.84, 0.975]),

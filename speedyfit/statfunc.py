@@ -306,7 +306,7 @@ def stat_chi2(meas, e_meas, colors, syn, pars, **kwargs):
    derived_properties = kwargs.get('derived_properties', {})
    constraints = kwargs.get('constraints', {})
    
-   for con, (c, c_m, c_p) in constraints.items():
+   for con, (c, c_m, c_p) in list(constraints.items()):
       syn_c = None
       if con == 'distance' and sum(~colors) > 0:
          # distance can only be constrained if there is at least 1 absolute measurement
@@ -377,7 +377,7 @@ def stat_chi2_multiple(meas, e_meas, colors, syn, pars, **kwargs):
    derived_properties = kwargs.get('derived_properties', {})
    constraints = kwargs.get('constraints', {})
    
-   for con, (c, c_m, c_p) in constraints.items():
+   for con, (c, c_m, c_p) in list(constraints.items()):
       syn_c = None
       if con == 'distance' and sum(~colors) > 0:
          # distance can only be constrained if there is at least 1 absolute measurement

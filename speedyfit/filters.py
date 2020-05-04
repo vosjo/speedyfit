@@ -117,4 +117,4 @@ def flux2mag(flux, error, photband):
 
 if __name__=="__main__":
    
-   print (mag2flux(13.0, 0.01, '2MASS.H'))
+   print((mag2flux(13.0, 0.01, '2MASS.H')))

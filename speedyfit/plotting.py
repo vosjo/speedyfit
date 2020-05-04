@@ -10,7 +10,7 @@ import matplotlib.ticker as ticker
 
 from scipy.stats import gaussian_kde
 
-import model, filters, reddening
+from . import model, filters, reddening
 
 from astropy.io import ascii
 
@@ -151,7 +151,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
    
    pars = pars.copy()
    
-   print pars
+   print(pars)
    
    # use model from 'best' results or 'pc' results
    resi = 0 if result == 'best' else 1
@@ -170,24 +170,24 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
    
    abs_xlim = (0.9 * np.min(waves), 1.1 * np.max(waves) )
    
-   if not len(pars.keys()) == 0:
+   if not len(list(pars.keys())) == 0:
       ipars = pars.copy()
-      for key, value in pars.items():
+      for key, value in list(pars.items()):
          ipars[key] = [value[resi]]
          pars[key] = value[resi]
       _ = ipars.pop('d')
       _ = pars.pop('d')
       
-      print ipars
-      print photbands
+      print(ipars)
+      print(photbands)
       
       syn, Labs = model.get_itable(grid=grids, photbands=photbands, **ipars)
       syn = syn[:,0]
       
       scale = pars['scale']
       
-      print scale
-      print syn*scale
+      print(scale)
+      print(syn*scale)
    
    # plot the fit of the absolute data
    #====================================
@@ -197,7 +197,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
       ax1 = pl.subplot2grid((3,3), (0, 0), colspan=2, rowspan=2)
    
    
-   if not len(pars.keys()) == 0:
+   if not len(list(pars.keys())) == 0:
       
       #-- synthetic integrated fluxes
       pl.plot(waves, scale*syn[~colors], 'xr')
@@ -304,7 +304,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
       
       ax = pl.subplot2grid((3,3), (0, 2), colspan=1, rowspan=2)
       
-      y = np.array(range(len(obs[colors])))
+      y = np.array(list(range(len(obs[colors]))))
       x = obs[colors] - syn[colors]
       x_err = obs_err[colors]
       oc_sys = psystems[colors]

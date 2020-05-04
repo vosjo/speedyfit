@@ -10,6 +10,7 @@ install_requires = [
     "matplotlib",
     "pyaml",
     "corner",
+    "tqdm",
 ]
 
 setuptools.setup(

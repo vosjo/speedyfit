@@ -1,11 +1,11 @@
 
 import os
 
-import ConfigParser
+import configparser
 
 import numpy as np
 
-import fileio, filters
+from . import fileio, filters
 
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
@@ -23,12 +23,12 @@ filedir = os.path.dirname(os.path.abspath(__file__))
 v = Vizier(columns=["*", '+_r']) 
 
 #-- read in catalog information
-viz_info = ConfigParser.ConfigParser()
+viz_info = configparser.ConfigParser()
 viz_info.optionxform = str # make sure the options are case sensitive
 viz_info.readfp(open(filedir+'/vizier_cats_phot.cfg'))
 
 
-tap_info = ConfigParser.ConfigParser()
+tap_info = configparser.ConfigParser()
 tap_info.optionxform = str # make sure the options are case sensitive
 tap_info.readfp(open(filedir+'/tap_cats_phot.cfg'))
 
@@ -65,7 +65,7 @@ def get_vizier_photometry(objectname, radius=5):
    
    photometry = []
    
-   for catalog in data.keys():
+   for catalog in list(data.keys()):
       
       distance = (data[catalog]['_r'][0] * u.arcmin).to(u.arcsec).value
       
@@ -74,7 +74,7 @@ def get_vizier_photometry(objectname, radius=5):
       else:
          bibcode = '-'
       
-      print catalog
+      print(catalog)
       
       for band in viz_info.options(catalog):
          
@@ -110,7 +110,7 @@ def tap_query(ra, dec, catalog):
    tp = TapPlus(url=catalog)
    
    table = tap_info.get(catalog, 'table')
-   print table
+   print(table)
    
    keywords = ""
    bands = []
@@ -148,9 +148,9 @@ def tap_query(ra, dec, catalog):
       
       results = job.get_results()
       
-   except Exception, e:
+   except Exception as e:
       
-      print "problem", e
+      print("problem", e)
       
       #-- not all catalogs accept a distance sorted query, we have to hope that the correct star is returned.
       query = """SELECT {rakw:} as RA, {deckw} as DE, {kws:}

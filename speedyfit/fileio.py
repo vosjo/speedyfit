@@ -7,7 +7,7 @@ import numpy as np
 try:
    import gzip
    has_zip = True
-except Exception, d:
+except Exception as d:
    has_zip = False
 
 from astropy.io import fits
@@ -38,7 +38,7 @@ def read2list(filename, commentchar='#', splitchar=None, skip_empty=True, skip_l
    if os.path.splitext(filename)[1] == '.gz' and has_zip:
       ff = gzip.open(filename)
    elif os.path.splitext(filename)[1] == '.gz':
-      print 'gzip not installed'
+      print('gzip not installed')
       return [], []
    else:
       ff = open(filename)
@@ -282,9 +282,9 @@ def write_summary2hdf5(objectname, samples, obs, obs_err, photbands, pars={}, gr
    Writes the obeservations and results to hdf5 format readable by AOTS
    """
    from astropy.table import Table
-   import model
-   import filters
-   from photometry_query import get_coordinate
+   from . import model
+   from . import filters
+   from .photometry_query import get_coordinate
    
    if filename is None: filename = objectname + '_sedfit.hdf5'
    f = h5py.File(filename, "w")
@@ -337,13 +337,13 @@ def write_summary2hdf5(objectname, samples, obs, obs_err, photbands, pars={}, gr
    
       return ''
    
-   if not len(pars.keys()) == 0:
+   if not len(list(pars.keys())) == 0:
       
       
       #-- create parameters
       group = f.create_group('PARAMETERS')
       ipars = pars.copy()
-      for key, value in pars.items():
+      for key, value in list(pars.items()):
          
          ipars[key] = [value[resi]]
          pars[key] = value[resi]

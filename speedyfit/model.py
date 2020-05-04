@@ -4,7 +4,7 @@ import numpy as np
  
 from astropy.io import fits 
 
-import interpol, filters
+from . import interpol, filters
 
 __defaults__ = dict(grid='kurucz2',
                     directory='/home/joris/Python/ivsdata/sedtables/modelgrids/')
@@ -157,7 +157,7 @@ def get_itable_single(teff=None, logg=None, g=None, ebv=0.0, **kwargs):
 def get_itable(grid=[], **kwargs):
    
    values, parameters, components = {}, set(), set()
-   for key in kwargs.keys():
+   for key in list(kwargs.keys()):
       if re.search("^(teff|logg|g|ebv|rad)\d?$", key):
          par, comp = re.findall("^(teff|logg|g|ebv|rad)(\d?)$", key)[0]
          values[key] = kwargs.pop(key)
@@ -234,7 +234,7 @@ def get_table(grid=[], **kwargs):
    Returns the closest model atmosphere available in the grid. No interpolation is done!
    """
    values, parameters, components = {}, set(), set()
-   for key in kwargs.keys():
+   for key in list(kwargs.keys()):
       if re.search("^(teff|logg|g|ebv|rad)\d?$", key):
          par, comp = re.findall("^(teff|logg|g|ebv|rad)(\d?)$", key)[0]
          values[key] = kwargs.pop(key)
@@ -309,7 +309,7 @@ def _get_flux_from_table(fits_ext,photbands,index=None,include_Labs=True):
                fb = fits_ext.data.field('STROMGREN.B')[index]
                fluxes.append(fu*fb/fv**2)
       except KeyError:
-         print 'Passband %s missing from table'%(photband)
+         print('Passband %s missing from table'%(photband))
          fluxes.append(np.nan*np.ones(len(fits_ext.data)))
    #-- possibly include absolute luminosity
    if include_Labs:
