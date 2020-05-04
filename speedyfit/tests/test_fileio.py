@@ -4,7 +4,7 @@ import numpy as np
 
 import  unittest
 
-from speedyfit import fileio
+from speedyfit.speedyfit import fileio
 
 default = """
 # photometry file and column indices

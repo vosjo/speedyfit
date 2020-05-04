@@ -3,7 +3,7 @@ import numpy as np
 
 import  unittest
 
-from speedyfit import statfunc
+from speedyfit.speedyfit import statfunc
 
 class TestMCMC(unittest.TestCase):
       

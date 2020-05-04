@@ -100,7 +100,8 @@ plot2:
 # parameters: ['mass', 'L', 'mass2', 'L2', 'q']
 """
 
-if __name__=="__main__":
+
+def main():
 
    parser = argparse.ArgumentParser()
    parser.add_argument('filename', action="store", type=str, help='use setup given in this file')
@@ -131,7 +132,7 @@ if __name__=="__main__":
       ofile.close()
       
       if args.photometry:
-         photometry = photometry_query.get_photometry(objectname, filename = objectname + '.phot')
+         photometry = photometry_query.get_photometry(objectname, filename =objectname + '.phot')
       
       sys.exit()
    
@@ -232,12 +233,12 @@ if __name__=="__main__":
    
    
    #-- MCMC
-   results, samples = mcmc.MCMC(obs, obs_err, photbands, 
-                                 pnames, limits, grids, 
-                                 fixed_variables=fixed_variables,
-                                 constraints=constraints, derived_limits=derived_limits,
-                                 nwalkers=nwalkers, nsteps=nsteps, nrelax=nrelax,
-                                 a=a)
+   results, samples = mcmc.MCMC(obs, obs_err, photbands,
+                                pnames, limits, grids,
+                                fixed_variables=fixed_variables,
+                                constraints=constraints, derived_limits=derived_limits,
+                                nwalkers=nwalkers, nsteps=nsteps, nrelax=nrelax,
+                                a=a)
    
    #-- add fixed variables to results dictionary
    for par, val in fixed_variables.items():
@@ -393,3 +394,7 @@ if __name__=="__main__":
 
    if not args.noplot:
       pl.show()
+
+
+if __name__ == "__main__":
+    main()

@@ -3,7 +3,8 @@ import numpy as np
 
 import  unittest
 
-from speedyfit import mcmc, statfunc, model
+from speedyfit.speedyfit import mcmc, statfunc
+
 
 class TestMCMC(unittest.TestCase):
    
@@ -29,7 +30,7 @@ class TestMCMC(unittest.TestCase):
       
       derived_properties = statfunc.get_derived_properties(theta, pnames)
       
-      prior = mcmc.lnprior(theta, derived_properties, limits, 
+      prior = mcmc.lnprior(theta, derived_properties, limits,
                            pnames = pnames, derived_limits=derived_limits)
       
       self.assertEqual(prior, 0,
@@ -40,7 +41,7 @@ class TestMCMC(unittest.TestCase):
       theta = (15000, 5.8, 0.1429, 5771, 4.438, 1, 0.02)
       derived_properties = statfunc.get_derived_properties(theta, pnames)
       
-      prior = mcmc.lnprior(theta, derived_properties, limits, 
+      prior = mcmc.lnprior(theta, derived_properties, limits,
                            pnames = pnames, derived_limits=derived_limits)
       
       self.assertEqual(prior, -np.inf,
@@ -51,7 +52,7 @@ class TestMCMC(unittest.TestCase):
       theta = (26000, 5.8, 0.10, 5771, 4.438, 1, 0.02)
       derived_properties = statfunc.get_derived_properties(theta, pnames)
       
-      prior = mcmc.lnprior(theta, derived_properties, limits, 
+      prior = mcmc.lnprior(theta, derived_properties, limits,
                            pnames = pnames, derived_limits=derived_limits)
       
       self.assertEqual(prior, -np.inf,

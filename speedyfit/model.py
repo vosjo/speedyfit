@@ -102,7 +102,7 @@ def prepare_grid(photbands, gridname,
    flux = np.log10(flux)
    
    #-- create the pixeltype grid
-   axis_values, pixelgrid = interpol.create_pixeltypegrid(grid_pars,flux.T)
+   axis_values, pixelgrid = interpol.create_pixeltypegrid(grid_pars, flux.T)
    return axis_values,grid_pars.T,pixelgrid,grid_names
 
 def get_itable_single(teff=None, logg=None, g=None, ebv=0.0, **kwargs):

@@ -10,7 +10,6 @@ import matplotlib.ticker as ticker
 
 from scipy.stats import gaussian_kde
 
-import statfunc
 import model, filters, reddening
 
 from astropy.io import ascii
@@ -209,7 +208,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
          #-- synthetic model
          ebv = pars['ebv']
          wave, flux = model.get_table(grid=gridnames, **pars)
-         flux = reddening.redden(flux,wave=wave,ebv=ebv,rtype='flux',law='fitzpatrick2004')
+         flux = reddening.redden(flux, wave=wave, ebv=ebv, rtype='flux', law='fitzpatrick2004')
          
          ascii.write([wave, scale*flux], 'binary_model.txt', names=['wave', 'flux'], overwrite=True)
          
@@ -218,12 +217,12 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
          #-- plot components
          if plot_components and 'teff2' in pars:
             wave, flux = model.get_table(grid=gridnames[0], teff=pars['teff'], logg=pars['logg'], rad=pars['rad'], ebv=pars['ebv'])
-            flux = reddening.redden(flux,wave=wave,ebv=ebv,rtype='flux',law='fitzpatrick2004')
+            flux = reddening.redden(flux, wave=wave, ebv=ebv, rtype='flux', law='fitzpatrick2004')
             ascii.write([wave, scale*flux], 'primary_model.txt', names=['wave', 'flux'], overwrite=True)
             pl.plot(wave, scale*flux, '--g')
             
             wave, flux = model.get_table(grid=gridnames[1], teff=pars['teff2'], logg=pars['logg2'], rad=pars['rad2'], ebv=pars['ebv'])
-            flux = reddening.redden(flux,wave=wave,ebv=ebv,rtype='flux',law='fitzpatrick2004')
+            flux = reddening.redden(flux, wave=wave, ebv=ebv, rtype='flux', law='fitzpatrick2004')
             ascii.write([wave, scale*flux], 'secondary_model.txt', names=['wave', 'flux'], overwrite=True)
             pl.plot(wave, scale*flux, '--b')
          

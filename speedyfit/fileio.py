@@ -1,6 +1,5 @@
 import os
 import h5py
-import yaml
 import datetime
 
 import numpy as np

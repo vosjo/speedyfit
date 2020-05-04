@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 from numpy.lib.recfunctions import merge_arrays
 
@@ -132,7 +131,7 @@ def MCMC(obs, obs_err, photbands,
          nwalkers=100, nsteps=1000, nrelax=150, a=10, pos=None):
 
     #-- check which bands are colors
-    colors = np.array([filters.is_color(photband) for photband in photbands],bool)
+    colors = np.array([filters.is_color(photband) for photband in photbands], bool)
 
     #-- initialize the walkers randomly is no starting positions are given
     if pos is None:
@@ -149,7 +148,7 @@ def MCMC(obs, obs_err, photbands,
               'fixed_variables':fixed_variables,
               'constraints':constraints,
               'derived_limits':derived_limits,
-              'prop_func':statfunc.get_derived_properties}
+              'prop_func': statfunc.get_derived_properties}
 
     # TODO: storing the blobs as dictionary with dtype object and then later converting to recarray is inefficient.
     # This needs to be addressed: provide the correct dtypes here and let emcee directly store them in recarray

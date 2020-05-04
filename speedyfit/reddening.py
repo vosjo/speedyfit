@@ -73,12 +73,12 @@ def get_law(name,norm='E(B-V)',photbands=None,**kwargs):
             norm = 'JOHNSON.K'
         elif norm.lower()=='av':
             norm = 'JOHNSON.V'
-        norm_reddening = model.synthetic_flux(wave_orig,mag_orig,[norm])[0]
+        norm_reddening = model.synthetic_flux(wave_orig, mag_orig, [norm])[0]
         mag /= norm_reddening
     
     #-- maybe we want the curve in photometric filters
     if photbands is not None:
-        mag = model.synthetic_flux(wave,mag,photbands)
+        mag = model.synthetic_flux(wave, mag, photbands)
         wave = filters.get_info(photbands)['eff_wave']
     
     return wave,mag
@@ -231,7 +231,7 @@ def fitzpatrick2004(Rv=3.1,**kwargs):
     """
     filename = 'Fitzpatrick2004_Rv_%.1f.red'%(Rv)
     myfile = os.path.join(basename,filename)
-    wave_inv,elamv_ebv = fileio.read2array(myfile,skip_lines=15).T
+    wave_inv,elamv_ebv = fileio.read2array(myfile, skip_lines=15).T
     
     return 1e4/wave_inv[::-1],((elamv_ebv+Rv)/Rv)[::-1]
 
