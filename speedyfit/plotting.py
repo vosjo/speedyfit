@@ -151,8 +151,6 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
    
    pars = pars.copy()
    
-   print(pars)
-   
    # use model from 'best' results or 'pc' results
    resi = 0 if result == 'best' else 1
    
@@ -178,16 +176,10 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
       _ = ipars.pop('d')
       _ = pars.pop('d')
       
-      print(ipars)
-      print(photbands)
-      
       syn, Labs = model.get_itable(grid=grids, photbands=photbands, **ipars)
       syn = syn[:,0]
       
       scale = pars['scale']
-      
-      print(scale)
-      print(syn*scale)
    
    # plot the fit of the absolute data
    #====================================
