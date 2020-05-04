@@ -11,11 +11,9 @@ import matplotlib.ticker as ticker
 from scipy.stats import gaussian_kde
 
 import statfunc
-import model
-import filters
+import model, filters, reddening
 
-# TODO: add the reddening module in speedyfit
-from ivs.sed import reddening
+from astropy.io import ascii
 
 def format_parameter(name, value):
    
@@ -213,21 +211,25 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
          wave, flux = model.get_table(grid=gridnames, **pars)
          flux = reddening.redden(flux,wave=wave,ebv=ebv,rtype='flux',law='fitzpatrick2004')
          
+         ascii.write([wave, scale*flux], 'binary_model.txt', names=['wave', 'flux'], overwrite=True)
+         
          pl.plot(wave, scale*flux, '-r')
          
          #-- plot components
          if plot_components and 'teff2' in pars:
             wave, flux = model.get_table(grid=gridnames[0], teff=pars['teff'], logg=pars['logg'], rad=pars['rad'], ebv=pars['ebv'])
             flux = reddening.redden(flux,wave=wave,ebv=ebv,rtype='flux',law='fitzpatrick2004')
+            ascii.write([wave, scale*flux], 'primary_model.txt', names=['wave', 'flux'], overwrite=True)
             pl.plot(wave, scale*flux, '--g')
             
             wave, flux = model.get_table(grid=gridnames[1], teff=pars['teff2'], logg=pars['logg2'], rad=pars['rad2'], ebv=pars['ebv'])
             flux = reddening.redden(flux,wave=wave,ebv=ebv,rtype='flux',law='fitzpatrick2004')
+            ascii.write([wave, scale*flux], 'secondary_model.txt', names=['wave', 'flux'], overwrite=True)
             pl.plot(wave, scale*flux, '--b')
          
          
       
-   
+   wave, flux, error, band = [], [], [], []
    for system in all_systems:
       s = np.where((psystems == system) & (~colors))
       if len(obs[s]) == 0: continue
@@ -235,6 +237,14 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
       w = np.array([filters.eff_wave(p) for p in photbands[s]])
       pl.errorbar(w, obs[s], yerr=obs_err[s], ls='', marker='o', 
                   color=system_colors[system], label=system)
+      
+      wave.extend(w)
+      flux.extend(obs[s])
+      error.extend(obs_err[s])
+      band.extend([system for i in w])
+      
+    
+   ascii.write([wave, flux, error, band], 'observations.txt', names=['wave', 'flux', 'error', 'band'], overwrite=True)
    
       
    pl.xlim(abs_xlim)
