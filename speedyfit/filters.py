@@ -48,7 +48,7 @@ def mag2flux(mag, error, photband):
    """
    data = ascii.read(os.path.join(basedir, 'zeropoints.dat'), comment="\s*#")
    
-   if hasattr(photband, '__iter__'):
+   if hasattr(mag, '__iter__'):
       flux, err = np.zeros_like(mag), np.zeros_like(mag)
       for i, (m, e, b) in enumerate(zip(mag, error, photband)):
          
@@ -66,7 +66,7 @@ def mag2flux(mag, error, photband):
    else:
       s = np.where(data['photband'] == photband)
       data = data[s]
-      
+
       F0 = data['Flam0'][0]
       zpcor = data['zp_corr'][0]
       
@@ -87,7 +87,7 @@ def flux2mag(flux, error, photband):
    """
    data = ascii.read(os.path.join(basedir, 'zeropoints.dat'), comment="\s*#")
    
-   if hasattr(photband, '__iter__'):
+   if hasattr(mag, '__iter__'):
       mag, err = np.zeros_like(flux), np.zeros_like(flux)
       for i, (f, e, b) in enumerate(zip(flux, error, photband)):
          

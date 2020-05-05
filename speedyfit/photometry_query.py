@@ -5,7 +5,7 @@ import configparser
 
 import numpy as np
 
-from . import fileio, filters
+from . import filters
 
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
@@ -14,6 +14,7 @@ from astroquery.utils.tap.core import TapPlus
 from astropy import units as u
 from astropy.coordinates.angles import Angle
 from astropy.coordinates import SkyCoord
+from astropy.io import ascii
 
 from numpy.lib.recfunctions import append_fields
 
@@ -99,7 +100,7 @@ def get_vizier_photometry(objectname, radius=5):
          
          photometry.append(( bandname, value, err, unit, distance, bibcode ))
    
-   dtypes = [('band', 'a20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', 'a10'), ('distance', 'f8'), ('bibcode', 'a20')]
+   dtypes = [('band', '<U20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', '<U10'), ('distance', 'f8'), ('bibcode', '<U20')]
    photometry = np.array(photometry, dtype=dtypes)
    
    return photometry
@@ -218,18 +219,18 @@ def get_photometry(objectname, filename=None):
    ra, dec = get_coordinate(objectname)
    
    #-- query tap catalogs
-   photometry = get_tap_photometry(ra, dec)
+   # photometry = get_tap_photometry(ra, dec)
    
    #-- query Vizier catalogs
-   photometry_ = get_vizier_photometry("{} {}".format(ra, dec))
+   photometry = get_vizier_photometry("{} {}".format(ra, dec))
 
-   photometry = np.hstack([photometry, photometry_])
-   
+   # photometry = np.hstack([photometry, photometry_])
+
    #-- convert magnitudes to fluxes
    wave, flux, err = [], [], []
    for band, meas, emeas, unit in zip(photometry['band'], photometry['meas'], photometry['emeas'], photometry['unit']):
       if np.isnan(emeas) or emeas < 0: emeas = 0.02
-      
+
       f_, e_ = filters.mag2flux(meas, emeas, band)
       
       wave.append(filters.eff_wave(band))
@@ -239,13 +240,8 @@ def get_photometry(objectname, filename=None):
    photometry = append_fields(photometry, ['flux', 'eflux'], data=[flux, err], 
                               dtypes=['f8', 'f8'], usemask=False)
    
-   if not filename is None:
-      fileio.write_array(photometry, filename, auto_width=True, header=True, use_float='%e')
-   
-   #import pylab as pl
-   #pl.errorbar(wave, flux, yerr=err, marker='.', ls='')
-   #pl.loglog(wave, flux, marker='o', ls='')
-   #pl.show()
+   if filename is not None:
+      ascii.write(photometry, filename, format='fixed_width', overwrite=True)
    
    return photometry
 

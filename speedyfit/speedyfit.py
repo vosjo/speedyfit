@@ -6,6 +6,8 @@ import numpy as np
 import pylab as pl
 import corner
 
+from astropy.io import ascii
+
 from numpy.lib.recfunctions import append_fields, repack_fields
 
 from . import mcmc, model, plotting, fileio, filters
@@ -147,10 +149,11 @@ def main():
    setupfile.close()
    
    #-- parse photometry
-   data = fileio.read2array(setup['photometryfile'], dtype=str).T
-   photbands = data[setup['photband_index']]
-   obs = np.array(data[setup['obs_index']], dtype=float)
-   obs_err = np.array(data[setup['err_index']], dtype=float)
+   #data = fileio.read2array(setup['photometryfile'], dtype=str).T
+   data = ascii.read(setup['photometryfile'], format='fixed_width')
+   photbands = np.array(data['band'])
+   obs = np.array(data['flux'])
+   obs_err = np.array(data['eflux'])
 
    nani = np.isnan(obs) | np.isnan(obs_err)
    if any(nani):
