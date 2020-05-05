@@ -149,7 +149,6 @@ def main():
    setupfile.close()
    
    #-- parse photometry
-   #data = fileio.read2array(setup['photometryfile'], dtype=str).T
    data = ascii.read(setup['photometryfile'], format='fixed_width')
    photbands = np.array(data['band'])
    obs = np.array(data['flux'])

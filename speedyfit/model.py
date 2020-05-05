@@ -242,7 +242,7 @@ def get_table(grid=[], **kwargs):
          components.add(comp)
    
    # need to check here that grid is same length as components
-   if hasattr(grid, '__iter__'):
+   if hasattr(grid, '__iter__') and not isinstance(grid, str):
       grids = grid
    else:
       grids = [grid]
