@@ -149,10 +149,21 @@ def main():
    setupfile.close()
    
    #-- parse photometry
-   data = ascii.read(setup['photometryfile'], format='fixed_width')
-   photbands = np.array(data['band'])
-   obs = np.array(data['flux'])
-   obs_err = np.array(data['eflux'])
+   if isinstance(setup['photband_index'], str):
+      data = ascii.read(setup['photometryfile'], format='fixed_width')
+      photbands = np.array(data['band'])
+      obs = np.array(data['flux'])
+      obs_err = np.array(data['eflux'])
+   else:
+      data = ascii.read(setup['photometryfile'], data_start=0, header_start=None)
+
+      setup['photband_index'] = data.colnames[setup['photband_index']]
+      setup['obs_index'] = data.colnames[setup['obs_index']]
+      setup['err_index'] = data.colnames[setup['err_index']]
+
+      photbands = np.array(data[setup['photband_index']])
+      obs = np.array(data[setup['obs_index']])
+      obs_err = np.array(data[setup['err_index']])
 
    nani = np.isnan(obs) | np.isnan(obs_err)
    if any(nani):
@@ -388,7 +399,7 @@ def main():
                        quantiles=setup[pindex].get('quantiles', [0.025, 0.16, 0.5, 0.84, 0.975]),
                        levels=setup[pindex].get('levels', [0.393, 0.865, 0.95]),
                        truths=truths,
-                       show_titles=True, title_kwargs={"fontsize": 12})
+                       show_titles=True, title_kwargs={"fontsize": 12},)
          
          if not setup[pindex].get('path', None) is None:
             pl.savefig(setup[pindex].get('path', 'distribution.png'))
