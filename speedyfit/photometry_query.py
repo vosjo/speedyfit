@@ -10,6 +10,7 @@ from . import filters
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
 from astroquery.utils.tap.core import TapPlus
+import pyvo
 
 from astropy import units as u
 from astropy.coordinates.angles import Angle
@@ -106,6 +107,83 @@ def get_vizier_photometry(objectname, radius=5):
    return photometry
 
 
+def tap_query_vo(ra, dec, catalog):
+
+   service = pyvo.dal.TAPService(catalog)
+
+   table = tap_info.get(catalog, 'table')
+   print(table)
+
+   keywords = ""
+   bands = []
+   for band in tap_info.options(catalog):
+      if 'table' in band: continue
+      if 'rakw' in band: continue
+      if 'deckw' in band: continue
+      if '_unit' in band: continue
+      if '_err' in band: continue
+      if 'bibcode' in band: continue
+
+      errkw = tap_info.get(catalog, band + '_err') if tap_info.has_option(catalog, band + '_err') else 'e_' + band
+
+      keywords += band + ", " + errkw + ", "
+      bands.append(band)
+
+   if keywords[-2:] == ", ":
+      keywords = keywords[0:-2]
+
+   rakw = tap_info.get(catalog, 'rakw') if tap_info.has_option(catalog, 'rakw') else 'raj2000'
+   deckw = tap_info.get(catalog, 'deckw') if tap_info.has_option(catalog, 'deckw') else 'dej2000'
+
+   # -- first try to query with distance
+   query = """SELECT 
+         DISTANCE(POINT('ICRS', {rakw:}, {deckw}),
+                  POINT('ICRS', {ra:}, {dec:})) AS dist, {kws:}
+         FROM {table:} AS m
+         WHERE 
+            1=CONTAINS(POINT('ICRS', {rakw:}, {deckw}),
+                     CIRCLE('ICRS', {ra:}, {dec:}, 0.005 ))
+         ORDER BY dist""".format(ra=ra, dec=dec, table=table, rakw=rakw, deckw=deckw, kws=keywords)
+
+   results = service.run_sync(query).to_table()
+
+   if len(results) == 0:
+      dtypes = [('band', 'a20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', 'a10'), ('distance', 'f8'),
+                ('bibcode', 'a20')]
+      return np.array([], dtype=dtypes)
+
+   # -- get the distance from the query result or calculate it.
+   if 'dist' in results.dtype.names:
+      distance = (results['dist'][0] * u.degree).to(u.arcsec).value
+   else:
+      c1 = SkyCoord(ra * u.degree, dec * u.degree)
+      distance = SkyCoord(results['ra'][0] * u.degree, results['de'][0] * u.degree).separation(c1).to(u.arcsec).value
+
+   bibcode = tap_info.get(catalog, 'bibcode')
+
+   # -- get the photometric measurements, errors and units
+   photometry = []
+   for band in bands:
+      bandname = tap_info.get(catalog, band)
+      value = results[band][0]
+
+      errkw = tap_info.get(catalog, band + '_err') if tap_info.has_option(catalog, band + '_err') else 'e_' + band
+      err = results[errkw][0]
+
+      if tap_info.has_option(catalog, band + '_unit'):
+         unit = tap_info.get(catalog, band + '_unit')
+      else:
+         unit = results[band].unit
+
+      photometry.append((bandname, value, err, unit, distance, bibcode))
+
+   dtypes = [('band', '<U20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', '<U10'), ('distance', 'f8'), ('bibcode', '<U20')]
+   photometry = np.array(photometry, dtype=dtypes)
+
+   print(results)
+
+   return photometry
+
 def tap_query(ra, dec, catalog):
    
    tp = TapPlus(url=catalog)
@@ -195,7 +273,7 @@ def tap_query(ra, dec, catalog):
       
       photometry.append(( bandname, value, err, unit, distance, bibcode))
       
-   dtypes = [('band', 'a20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', 'a10'), ('distance', 'f8'), ('bibcode', 'a20')]
+   dtypes = [('band', '<U20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', '<U10'), ('distance', 'f8'), ('bibcode', '<U20')]
    photometry = np.array(photometry, dtype=dtypes)
 
    return photometry
@@ -203,12 +281,12 @@ def tap_query(ra, dec, catalog):
 def get_tap_photometry(ra, dec):
    catalogs = tap_info.sections()
    
-   dtypes = [('band', 'a20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', 'a10'), ('distance', 'f8'), ('bibcode', 'a20')]
+   dtypes = [('band', '<U20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', '<U10'), ('distance', 'f8'), ('bibcode', '<U20')]
    photometry = np.array([], dtype=dtypes)
    
    for catalog in catalogs:
       
-      phot_ = tap_query(ra, dec, catalog)
+      phot_ = tap_query_vo(ra, dec, catalog)
       photometry = np.hstack([photometry, phot_])
       
    return photometry
@@ -219,12 +297,15 @@ def get_photometry(objectname, filename=None):
    ra, dec = get_coordinate(objectname)
    
    #-- query tap catalogs
-   # photometry = get_tap_photometry(ra, dec)
+   photometry = get_tap_photometry(ra, dec)
    
    #-- query Vizier catalogs
-   photometry = get_vizier_photometry("{} {}".format(ra, dec))
+   photometry_ = get_vizier_photometry("{} {}".format(ra, dec))
 
-   # photometry = np.hstack([photometry, photometry_])
+   print(photometry)
+   print(photometry_)
+
+   photometry = np.hstack([photometry, photometry_])
 
    #-- convert magnitudes to fluxes
    wave, flux, err = [], [], []
@@ -254,7 +335,10 @@ def get_parallax(objectname, radius=5):
    v_gaia = Vizier(columns=["Plx", "e_Plx", '+_r']) 
       
    data = v_gaia.query_object(objectname, catalog=['I/345/gaia2'], radius=radius*u.arcsec)
-   
+
+   if len(data) == 0:
+      return None, None
+
    return data['I/345/gaia2']['Plx'][0], data['I/345/gaia2']['e_Plx'][0]
    
 
