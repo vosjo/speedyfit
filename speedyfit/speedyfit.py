@@ -16,9 +16,9 @@ default_single = """
 # photometry file with index to the columns containing the photbands, observations and errors
 objectname: <objectname>
 photometryfile: <photfilename>
-photband_index: 0
-obs_index: 6
-err_index: 7
+photband_index: band
+obs_index: flux
+err_index: eflux
 # parameters to fit and the limits on them in same order as parameters
 pnames: [teff, logg, rad, ebv]
 limits:
@@ -58,9 +58,9 @@ default_double = """
 # photometry file with index to the columns containing the photbands, observations and errors
 objectname: <objectname>
 photometryfile: <photfilename>
-photband_index: 0
-obs_index: 6
-err_index: 7
+photband_index: band
+obs_index: flux
+err_index: eflux
 # parameters to fit and the limits on them in same order as parameters
 pnames: [teff, logg, rad, teff2, logg2, rad2, ebv]
 limits:
