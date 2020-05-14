@@ -48,7 +48,7 @@ def mag2flux(mag, error, photband):
    """
    data = ascii.read(os.path.join(basedir, 'zeropoints.dat'), comment="\s*#")
    
-   if hasattr(mag, '__iter__'):
+   if not isinstance(photband, str):
       flux, err = np.zeros_like(mag), np.zeros_like(mag)
       for i, (m, e, b) in enumerate(zip(mag, error, photband)):
          
@@ -86,8 +86,8 @@ def flux2mag(flux, error, photband):
    Flux has to be provided in units of erg/s/cm2/AA
    """
    data = ascii.read(os.path.join(basedir, 'zeropoints.dat'), comment="\s*#")
-   
-   if hasattr(mag, '__iter__'):
+
+   if not isinstance(photband, str):
       mag, err = np.zeros_like(flux), np.zeros_like(flux)
       for i, (f, e, b) in enumerate(zip(flux, error, photband)):
          

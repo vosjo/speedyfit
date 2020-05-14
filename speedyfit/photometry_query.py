@@ -108,6 +108,10 @@ def get_vizier_photometry(objectname, radius=5):
 
 
 def tap_query_vo(ra, dec, catalog):
+   """
+   info see:
+   http://docs.g-vo.org/pyvo/html/page011.html
+   """
 
    service = pyvo.dal.TAPService(catalog)
 
