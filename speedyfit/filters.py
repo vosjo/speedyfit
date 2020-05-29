@@ -72,11 +72,13 @@ def mag2flux(mag, error, photband):
       
       flux = 10**(-(mag-zpcor)/2.5)*F0
       err = np.log(10) * error / 2.5 * flux
-   
-      if err == 0:
+
+      if hasattr(err, '__iter__'):
+         err = np.where(err == 0, flux / 10, err)
+      elif err == 0:
          err = flux / 10
    
-   return  flux, err
+   return flux, err
 
 
 def flux2mag(flux, error, photband):
