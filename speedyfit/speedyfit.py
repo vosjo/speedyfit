@@ -190,12 +190,17 @@ def main():
    if 'parallax' in constraints:
       p, pm, pp = constraints.pop('parallax')
       constraints['distance'] = [1000./p, 1000.*pm/p**2, 1000.*pp/p**2]
+
+   print ("Applied constraints: ")
+   for con, val in list(constraints.items()):
+      print("\t {} = {} - {} + {}".format(con, val[0], val[1], val[2]))
+
    if 'distance' in constraints:
       # convert pc to Rsol
       constraints['distance'] = [44365810.04823812 * constraints['distance'][0], 
                                  44365810.04823812 * constraints['distance'][1],
-                                 44365810.04823812 * constraints['distance'][2],] 
-   
+                                 44365810.04823812 * constraints['distance'][2],]
+
    #-- pars limits on derived properties
    derived_limits = setup['derived_limits']
    
