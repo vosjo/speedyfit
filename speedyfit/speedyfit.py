@@ -353,8 +353,10 @@ def main():
       fileio.write2fits(samples, datafile, setup=setup_str)
 
 
-   
-   #fileio.write_summary2hdf5(setup['objectname'], samples, obs, obs_err, photbands, pars=results, grids=setup['grids'], filename=None)
+   h5file = setup.get('h5file', None)
+   if h5file is not None:
+      fileio.write_summary2hdf5(setup['objectname'], samples, obs, obs_err, photbands, pars=results,
+                                grids=setup['grids'], filename=h5file)
    
    #-- Plotting 
    

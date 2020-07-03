@@ -308,7 +308,8 @@ def write_summary2hdf5(objectname, samples, obs, obs_err, photbands, pars={}, gr
    
    colors = np.array([filters.is_color(p) for p in photbands])
    waves = np.array([filters.eff_wave(p) for p in photbands[~colors]])
-   obsdata = Table([waves, photbands, obs[~colors], obs_err[~colors]], names=['wave', 'photband', 'flux', 'flux_err'])
+   pbands = np.array(photbands[~colors], dtype='<S') # needed to convert to S type for compatibility with h5 format.
+   obsdata = Table([waves, pbands, obs[~colors], obs_err[~colors]], names=['wave', 'photband', 'flux', 'flux_err'])
    
    #-- create the data group
    data = f.create_group('DATA')
@@ -348,7 +349,9 @@ def write_summary2hdf5(objectname, samples, obs, obs_err, photbands, pars={}, gr
          ipars[key] = [value[resi]]
          pars[key] = value[resi]
          
-         if key == 'scale' or key == 'chi2' or key == 'mass' or key == 'logg': continue
+         # if key == 'scale' or key == 'chi2' or key == 'mass' or key == 'logg': continue
+         if key in ['scale', 'chi2', 'mass', 'logg']: continue
+         if key not in samples.dtype.names: continue
          
          pg = group.create_group(key)
          pg.attrs['unit'] = get_unit(key)
