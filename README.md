@@ -24,11 +24,11 @@ To uninstall Speedyfit, run:
 Speedyfit can automatically download photometry from several of the large surveys, and many smaller studies available 
 on Vizier. By default only photometry from the following large and well calibrated surveys is obtained:
 
-- Gaia DR2
-- Sky Mapper DR1
-- APASS DR9
-- 2MASS
-- WISE
+- Gaia DR2: https://gea.esac.esa.int/archive/, [Gaia collaboration et al. 2018, A&A](https://ui.adsabs.harvard.edu/abs/2018A%26A...616A...1G/abstract)
+- Sky Mapper DR1: http://skymapper.anu.edu.au/, [Wolf et al. 2018, PASA](https://ui.adsabs.harvard.edu/abs/2018PASA...35...10W)
+- APASS DR9: https://www.aavso.org/apass, [Henden et al. 2015, AAS](https://ui.adsabs.harvard.edu/abs/2015AAS...22533616H)
+- 2MASS: https://irsa.ipac.caltech.edu/Missions/2mass.html, [Skrutskie et al. 2006, AJ](https://ui.adsabs.harvard.edu/abs/2006AJ....131.1163S/abstract)
+- WISE: http://wise.ssl.berkeley.edu/, [Cutri et al. 2012, yCat](http://cdsads.u-strasbg.fr/abs/2012yCat.2311....0C)
 
 You can download photometry for a given object as follows:
 
