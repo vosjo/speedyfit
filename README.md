@@ -104,3 +104,85 @@ obtained with speedyfit, the gaia distance will have been obtained automatically
 A typical use of constraints on fitted parameters as effective temperature and surface gravity is to use the SED to
 only determine the radius of the star is the atmospheric parameters are already obtained from for example as 
 spectroscopic analysis.
+
+## Example usage
+
+Lets try to fit the sdB+G type binary PG1104+243. We start with obtaining the photometry:
+
+    speedyfit PG1104+243 -empty binary --phot
+    
+The '-empty binary' option creates a default setup file for a binary fit, and the '--phot' option downloads photometry 
+from the standard sources. This command will have created 2 files: 'PG1104+243_binary.yaml' and 'PG1104+243.phot'. Lets 
+start with looking at the photometry file:
+
+```
+|      band |               meas |                 emeas |  unit |           distance |             bibcode |                   flux |                  eflux |
+|   GAIA2.G |            11.2007 |                0.0012 |   mag |               1.05 | 2018A&A...616A...1G |  8.248395510256044e-14 |    9.1164636206566e-17 |
+|  GAIA2.BP |            11.2266 |                0.0106 |   mag |               1.05 | 2018A&A...616A...1G | 1.3151989765830283e-13 |  1.284023604507669e-15 |
+|  GAIA2.RP |            11.0464 |                0.0018 |   mag |               1.05 | 2018A&A...616A...1G | 5.0236794630799464e-14 |  8.328563599441116e-17 |
+|   APASS.B | 11.359999656677246 |   0.04699999839067459 |   mag | 0.7320000000000001 | 2015AAS...22533616H |  1.785653711432151e-13 |   7.72984461564579e-15 |
+|   APASS.V | 11.331999778747559 |  0.017999999225139618 |   mag | 0.7320000000000001 | 2015AAS...22533616H | 1.0751193682636523e-13 | 1.7823986812698607e-15 |
+|   APASS.G | 11.210000038146973 |    0.0989999994635582 | ABmag | 0.7320000000000001 | 2015AAS...22533616H |  1.613585138824778e-13 | 1.4713051584537062e-14 |
+|   APASS.R | 11.310999870300293 |  0.014000000432133675 | ABmag | 0.7320000000000001 | 2015AAS...22533616H |  8.454580460944508e-14 | 1.0901739261158757e-15 |
+|   APASS.I | 11.350000381469727 |  0.027000000700354576 | ABmag | 0.7320000000000001 | 2015AAS...22533616H |  5.398668203455588e-14 | 1.3425364709722915e-15 |
+|   2MASS.J | 10.767999649047852 |  0.026000000536441803 |   mag |              0.132 |                   - | 1.5039297610503095e-14 |  3.601443372959058e-16 |
+|   2MASS.H | 10.520000457763672 |  0.027000000700354576 |   mag |              0.132 |                   - |  7.091360781455302e-15 | 1.7634739011803824e-16 |
+|  2MASS.KS | 10.510000228881836 |  0.023000000044703484 |   mag |              0.132 |                   - |  2.674932088409217e-15 |  5.666518062432707e-17 |
+|    SDSS.U |  11.87399959564209 | 0.0020000000949949026 |   mag |              0.354 |                   - | 1.6258783227745728e-13 | 2.9949786934881625e-16 |
+|    SDSS.G | 11.284000396728516 | 0.0010000000474974513 |   mag |              0.354 |                   - | 1.5247601537219582e-13 | 1.4043560668439271e-16 |
+|    SDSS.R | 11.440999984741211 | 0.0010000000474974513 |   mag |              0.354 |                   - |  7.587446336921016e-14 |  6.988296663640909e-17 |
+|    SDSS.I | 11.449999809265137 | 0.0010000000474974513 |   mag |              0.354 |                   - |  5.095632528557113e-14 |  4.693251222769927e-17 |
+|    SDSS.Z | 12.795999526977539 |  0.004999999888241291 |   mag |              0.354 |                   - | 1.0300768439060776e-14 |  4.743679064803486e-17 |
+|   WISE.W1 | 10.456000328063965 |  0.023000000044703484 |   mag |              0.636 |                   - |  5.373832766226388e-16 | 1.1383810664301285e-17 |
+|   WISE.W2 | 10.482999801635742 |  0.020999999716877937 |   mag |              0.636 |                   - | 1.5478084540820753e-16 | 2.9937269251093825e-18 |
+|   WISE.W3 | 10.451000213623047 |   0.07800000160932541 |   mag |              0.636 |                   - | 4.3005202859946986e-18 | 3.0895220013709453e-19 |
+|   WISE.W4 |  9.104000091552734 |                   nan |   mag |              0.636 |                   - | 1.1617863723639043e-18 | 2.1400895857990046e-20 |
+
+```
+
+We likely want to remove the SDSS photometry as it is not very reliable at the bright end, and the WISE.W4 band as it 
+doesn't have an error. The WISE.W3 band does have an error stated but is very close to the detection limit, and likely
+not reliable.
+
+In the 'PG1104+243_binary.yaml' we don't have to change anything as the default settings are good for this object, and 
+the parallax was filled automatically. The defaults assume a cool companion for which Speedyfit will use the Kurucz 
+ model grid, and a hot component for which the TMAP grid is used. Also by default the logg is not fit, but fixed at 
+ reasonable values as an SED fit seldom can constrain logg.
+ 
+ Lets fit the SED:
+ 
+    speedyfit PG1104+243_binary.yaml
+    
+ This will output:
+ 
+```
+Applied constraints: 
+         distance = 274.02515550927575 - 6.17988937560995 + 6.17988937560995
+100%|██████████████████████████████████████████████████████████████████████| 750/750 [01:12<00:00, 10.29it/s]
+================================================================================
+
+Resulting parameter values and errors:
+   Par             Best        Pc       emin       emax
+   teff       =    6201      6134   -     74   +     60
+   rad        =    0.89      0.90   -   0.02   +   0.02
+   teff2      =   47542     37532   -   6553   +   5984
+   rad2       =    0.12      0.13   -   0.01   +   0.03
+   ebv        =   0.090     0.068   -  0.033   +  0.023
+   mass       =    0.59      0.60   -   0.03   +   0.03
+   mass2      =    0.31      0.38   -   0.08   +   0.21
+   q          =   1.883     1.594   -  0.572   +  0.431
+   lr         =   0.040     0.050   -  0.007   +  0.010
+   rr         =   7.628     7.018   -  1.400   +  0.891
+   d          =     273       275   -      6   +      7
+   L          =    1.05      1.03   -   0.06   +   0.06
+   L2         =   26.49     20.62   -   4.00   +   3.86
+   scale      =   0.000     0.000   -  0.000   +  0.000
+   chi2       =   8.411    13.424   -  2.532   +  4.364
+
+```
+    
+ And will produce a figure of the SED with the best fitting model, and a distribution of the parameters:
+ 
+ ![example SED fit](https://raw.githubusercontent.com/vosjo/speedyfit/master/docs/PG1104%2B243_sed_binary.png)
+ 
+ ![example parameter distribution]( https://raw.githubusercontent.com/vosjo/speedyfit/master/docs/PG1104%2B243_distribution_primary.png)
