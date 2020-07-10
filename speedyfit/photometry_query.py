@@ -59,6 +59,7 @@ def get_coordinate(objectname):
       
    return ra, dec
 
+
 def get_vizier_photometry(objectname, radius=5):
    
    catalogs = viz_info.sections()
@@ -152,8 +153,7 @@ def tap_query_vo(ra, dec, catalog):
    results = service.run_sync(query).to_table()
 
    if len(results) == 0:
-      dtypes = [('band', 'a20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', 'a10'), ('distance', 'f8'),
-                ('bibcode', 'a20')]
+      dtypes = [('band', '<U20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', '<U10'), ('distance', 'f8'), ('bibcode', '<U20')]
       return np.array([], dtype=dtypes)
 
    # -- get the distance from the query result or calculate it.
@@ -184,9 +184,8 @@ def tap_query_vo(ra, dec, catalog):
    dtypes = [('band', '<U20'), ('meas', 'f8'), ('emeas', 'f8'), ('unit', '<U10'), ('distance', 'f8'), ('bibcode', '<U20')]
    photometry = np.array(photometry, dtype=dtypes)
 
-   print(results)
-
    return photometry
+
 
 def tap_query(ra, dec, catalog):
    
@@ -282,6 +281,7 @@ def tap_query(ra, dec, catalog):
 
    return photometry
 
+
 def get_tap_photometry(ra, dec):
    catalogs = tap_info.sections()
    
@@ -294,6 +294,7 @@ def get_tap_photometry(ra, dec):
       photometry = np.hstack([photometry, phot_])
       
    return photometry
+
 
 def get_photometry(objectname, filename=None):
    
@@ -329,6 +330,7 @@ def get_photometry(objectname, filename=None):
       ascii.write(photometry, filename, format='fixed_width', overwrite=True)
    
    return photometry
+
 
 def get_parallax(objectname, radius=5):
    
