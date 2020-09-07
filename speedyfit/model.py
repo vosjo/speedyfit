@@ -7,7 +7,7 @@ from astropy.io import fits
 from . import interpol, filters
 
 __defaults__ = dict(grid='kurucz2',
-                    directory='/home/joris/Python/ivsdata/sedtables/modelgrids/')
+                    directory=os.environ['SPEEDYFIT_MODELS'],)
 defaults = __defaults__.copy()
 
 

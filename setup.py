@@ -26,15 +26,15 @@ setuptools.setup(
     install_requires=install_requires,
     test_suite='pytest.collector',
     tests_require=['pytest'],
-    entry_points = {
+    entry_points={
         'console_scripts': ['speedyfit=speedyfit.speedyfit:main'],
     },
     classifiers=[
         "Development Status :: 3 - Alpha",
-        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU GENERAL PUBLIC LICENSE",
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Astronomy",
     ],
-    python_requires='>=2.7',
+    python_requires='>=3.7',
 )
