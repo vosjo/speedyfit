@@ -9,11 +9,47 @@ photometric observations of your target, and fit theoretical atmosphere models t
 deal with both single and binary stars, and allows for the inclusion of constraints from other sources, as for example
 the distance or reddening. 
 
-## Instalation
+## Installation
 
-The simplest way to install Speedyfit is using pip from the terminal. This will install Speedyfit in the local folder.
+The installation of speedyfit requires two steps, installing the python package, and downloading the required atmosphere
+models. The speedyfit package can be installed with pip from the pypi repository as follows:
 
-    pip install git+https://github.com/vosjo/speedyfit.git#egg=speedyfit
+    pip install speedyfit
+    
+The atmosphere models that speedyfit uses to fit the SEDs can be downloaded from:
+
+    http://www.astro.physik.uni-potsdam.de/~jorisvos/Speedyfit/modelgrids.tar.gz
+    
+Download them and unpack them in a directory of your choice. The last step is to store the path to the atmosphere models
+in an environment variable so that Speedyfit will know where to get them. In a bash shell this is done as follows:
+
+    export SPEEDYFIT_MODELS="<path to extracted atmosphere models>"
+    
+Where the path could be something like: '/home/user/speedyfit/modelgrids/'. To check that speedyfit can find all models 
+run:
+
+    python -c "from speedyfit.model import check_grids; check_grids()"
+
+Which if everything went well should give you the following output:
+
+    Checking which atmosphere models are available...
+    kurucz2
+             raw: available
+             integrated: available
+    munari
+             raw: available
+             integrated: available
+    tmap
+             raw: available
+             integrated: available
+    koester
+             raw: available
+             integrated: available
+    blackbody
+             raw: available
+             integrated: available
+
+If you get "NOT FOUND" for any of the models, check that the "SPEEDYFIT_MODELS" variable is correctly set up.
 
 To uninstall Speedyfit, run:
 

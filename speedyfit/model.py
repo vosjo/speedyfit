@@ -10,6 +10,24 @@ __defaults__ = dict(grid='kurucz2',
                     directory=os.environ['SPEEDYFIT_MODELS'],)
 defaults = __defaults__.copy()
 
+def check_grids():
+
+   print("Checking which atmosphere models are available...")
+
+   for grid in ['kurucz2', 'munari', 'tmap', 'koester', 'blackbody']:
+      print(grid)
+      gridpath = get_grid_file(integrated=False, grid=grid)
+      if os.path.isfile(gridpath):
+         print("\t raw: available")
+      else:
+         print("\t raw: NOT FOUND")
+
+      gridpath = get_grid_file(integrated=True, grid=grid)
+      if os.path.isfile(gridpath):
+         print("\t integrated: available")
+      else:
+         print("\t integrated: NOT FOUND")
+
 
 def get_grid_file(integrated=False, **kwargs):
    

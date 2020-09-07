@@ -15,6 +15,7 @@ install_requires = [
     "tqdm",
     "scipy",
     "h5py",
+    "pandas",
 ]
 
 setuptools.setup(
