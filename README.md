@@ -1,4 +1,7 @@
- 
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/speedyfit)
+[![PyPI](https://img.shields.io/pypi/v/speedyfit)](https://pypi.org/project/speedyfit/)
+[![GitHub](https://img.shields.io/github/license/vosjo/speedyfit)](https://github.com/vosjo/speedyfit/blob/master/LICENSE)
+
 # Speedyfit
 
 A python package to fit the photometric spectral energy distribution of stars. Uses a Markov chain Monte Carlo approach 
