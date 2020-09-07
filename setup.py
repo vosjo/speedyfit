@@ -7,10 +7,14 @@ install_requires = [
     "numpy",
     "emcee",
     "astropy",
+    "astroquery",
+    "pyvo",
     "matplotlib",
     "pyaml",
     "corner",
     "tqdm",
+    "scipy",
+    "h5py",
 ]
 
 setuptools.setup(
@@ -24,6 +28,7 @@ setuptools.setup(
     url="https://github.com/vosjo/speedyfit",
     packages=setuptools.find_packages(),
     install_requires=install_requires,
+    include_package_data=True,
     test_suite='pytest.collector',
     tests_require=['pytest'],
     entry_points={
