@@ -7,12 +7,20 @@ from astropy.io import fits
 from . import interpol, filters
 
 __defaults__ = dict(grid='kurucz2',
-                    directory=os.environ['SPEEDYFIT_MODELS'],)
+                    directory=os.environ.get('SPEEDYFIT_MODELS', None),)
 defaults = __defaults__.copy()
 
 def check_grids():
 
    print("Checking which atmosphere models are available...")
+
+   if defaults['directory'] is not None:
+      print("Checking for models in {}".format(defaults['directory']))
+   else:
+      print("SPEEDYFIT_MODELS environmental variable not set. CAN NOT find models!")
+      print("Please point the SPEEDYFIT_MODELS variable to the directory where you stored models. On bash use:")
+      print("\texport SPEEDYFIT_MODELS='<path to extracted atmosphere models>'")
+      return
 
    for grid in ['kurucz2', 'munari', 'tmap', 'koester', 'blackbody']:
       print(grid)

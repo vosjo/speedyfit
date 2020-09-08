@@ -28,14 +28,16 @@ in an environment variable so that Speedyfit will know where to get them. In a b
 
     export SPEEDYFIT_MODELS="<path to extracted atmosphere models>"
     
-Where the path could be something like: '/home/user/speedyfit/modelgrids/'. To check that speedyfit can find all models 
-run:
+Where the path could be something like: '/home/user/speedyfit/modelgrids/'. To not always have to type this in the 
+terminal when running Speedyfit, you can add it to your '.bashrc' file.
+To check that speedyfit can find all models run:
 
     python -c "from speedyfit.model import check_grids; check_grids()"
 
 Which if everything went well should give you the following output:
 
     Checking which atmosphere models are available...
+    Checking for models in <path to extracted atmosphere models>
     kurucz2
              raw: available
              integrated: available
@@ -52,7 +54,15 @@ Which if everything went well should give you the following output:
              raw: available
              integrated: available
 
-If you get "NOT FOUND" for any of the models, check that the "SPEEDYFIT_MODELS" variable is correctly set up.
+If you get an error like:
+
+    SPEEDYFIT_MODELS environmental variable not set. CAN NOT find models!
+    Please point the SPEEDYFIT_MODELS variable to the directory where you stored models. On bash use:
+    export SPEEDYFIT_MODELS='<path to extracted atmosphere models>'
+
+Check that your "SPEEDYFIT_MODELS" variable is correctly set up. If you get "NOT FOUND" for any of the models, check 
+that the "SPEEDYFIT_MODELS" variable points to the correct directory, and that the directory contains the extracted 
+atmosphere models.
 
 To uninstall Speedyfit, run:
 
