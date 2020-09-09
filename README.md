@@ -191,7 +191,8 @@ start with looking at the photometry file:
 
 We likely want to remove the SDSS photometry as it is not very reliable at the bright end, and the WISE.W4 band as it 
 doesn't have an error. The WISE.W3 band does have an error stated but is very close to the detection limit, and likely
-not reliable.
+not reliable. You can exclude photometry by commenting (with '#') the corresponding line in the photometry file, or by 
+removing the point altogether. 
 
 In the 'PG1104+243_binary.yaml' we don't have to change anything as the default settings are good for this object, and 
 the parallax was filled automatically. The defaults assume a cool companion for which Speedyfit will use the Kurucz 
