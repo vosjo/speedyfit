@@ -202,8 +202,8 @@ WISE.W1, while the second line will select all photometry that was found except 
 
 ```yaml
 ...
-photband_exclude: [GAIA2, 2MASS, WISE.W1]
-photband_include: [WISE]
+photband_include: [GAIA2, 2MASS, WISE.W1]
+photband_exclude: [WISE]
 ...
 ```
 
