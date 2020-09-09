@@ -1,10 +1,10 @@
+import pytest
+
 import os
 
 import numpy as np
 
-import  unittest
-
-from speedyfit.speedyfit import fileio
+from speedyfit import fileio
 
 default = """
 # photometry file and column indices
@@ -43,25 +43,26 @@ a: 10            # relative size of the steps taken
 datafile: none   # filepath to write results of all walkers
 """
 
-class TestFileIO(unittest.TestCase):
-      
-   def test_write2fits(self):
-      
-      data = np.array([(1, 2), (2, 3)], dtype=[('a', 'f8'), ('b', 'f8')])
-      
-      fileio.write2fits(data, 'testfile.fits', setup=default)
-      
-      samples, setup = fileio.read_fits('testfile.fits')
-      
-      self.assertEqual(setup, default,
-                       msg="setup information not correctly written/read to/from file")
-      
-      for name in data.dtype.names:
-         for v1, v2 in zip(data[name], samples[name]):
-            self.assertEqual(v1, v2,
-                       msg="samples not equal in column: {}, value: {} != {}".format(name, v1, v2))
-      
-      
-      os.remove('testfile.fits')
 
-      
+class TestFileIO:
+
+    def test_write2fits(self):
+
+        data = np.array([(1, 2), (2, 3)], dtype=[('a', 'f8'), ('b', 'f8')])
+
+        try:
+            fileio.write2fits(data, 'testfile.fits', setup=default)
+
+            samples, setup = fileio.read_fits('testfile.fits')
+
+            assert setup == default
+
+            for name in data.dtype.names:
+                for v1, v2 in zip(data[name], samples[name]):
+                    assert v1 == v2
+
+            os.remove('testfile.fits')
+
+        finally:
+            if os.path.isfile('testfile.fits'):
+                os.remove('testfile.fits')
