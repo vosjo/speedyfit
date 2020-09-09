@@ -126,19 +126,30 @@ def select_photometry(photbands, obs, obs_err, remove_nan=True, remove_color=Tru
     if remove_color:
         color = np.array([filters.is_color(p) for p in photbands])
         s = np.where(~color)
-        if any(s) and verbose:
+        if any(color) and verbose:
             print("Warning: The following colors were removed:")
             for p in photbands[s]:
                 print("\t {}".format(p))
         photbands, obs, obs_err = photbands[s], obs[s], obs_err[s]
 
-    # -- only include bands that are requested based on the include keyword
+    # -- only include bands that are requested based on the include keyword, or exclude all non wanted photometry
+    #    based on the exclude keyword.
     if include is not None:
         photsys_include = [x for x in include if not '.' in x]
         photband_include = [x for x in include if '.' in x]
         incband = []
         for i, photband in enumerate(photbands):
             if photband in photband_include or photband.split('.')[0] in photsys_include:
+                incband.append(i)
+        incband = (np.array(incband),)
+        photbands, obs, obs_err = photbands[incband], obs[incband], obs_err[incband]
+
+    elif exclude is not None:
+        photsys_exclude = [x for x in exclude if not '.' in x]
+        photband_exclude = [x for x in exclude if '.' in x]
+        incband = []
+        for i, photband in enumerate(photbands):
+            if photband not in photband_exclude and photband.split('.')[0] not in photsys_exclude:
                 incband.append(i)
         incband = (np.array(incband),)
         photbands, obs, obs_err = photbands[incband], obs[incband], obs_err[incband]
@@ -209,7 +220,8 @@ def main():
 
     #-- select the requested photometry
     photbands, obs, obs_err = select_photometry(photbands, obs, obs_err, remove_nan=True, remove_color=True,
-                                                include=setup.get('photband_include', None), exclude=None)
+                                                include=setup.get('photband_include', None),
+                                                exclude=setup.get('photband_exclude', None))
 
     # -- pars limits
     pnames = setup['pnames']
