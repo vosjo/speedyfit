@@ -194,6 +194,19 @@ doesn't have an error. The WISE.W3 band does have an error stated but is very cl
 not reliable. You can exclude photometry by commenting (with '#') the corresponding line in the photometry file, or by 
 removing the point altogether. 
 
+An alternative way of selecting which photometry to include or exclude in a fit is by specifying the 'photband_include' 
+and 'photband_exclude' options in the yaml setup file. The include option will only include the given photbands, while 
+the exclude option will use all photometry except the given bands. You can specify a specific band like 'GAIA2.G' or the
+entire photometric system like 'GAIA2'. For example, the first line selects all GAIA and 2MASS bands together with 
+WISE.W1, while the second line will select all photometry that was found except the WISE bands. 
+
+```yaml
+...
+photband_exclude: [GAIA2, 2MASS, WISE.W1]
+photband_include: [WISE]
+...
+```
+
 In the 'PG1104+243_binary.yaml' we don't have to change anything as the default settings are good for this object, and 
 the parallax was filled automatically. The defaults assume a cool companion for which Speedyfit will use the Kurucz 
  model grid, and a hot component for which the TMAP grid is used. Also by default the logg is not fit, but fixed at 
