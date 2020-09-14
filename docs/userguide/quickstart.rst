@@ -80,6 +80,6 @@ known, the setup of the MCMC algorithm and what output you like to have.
 
 to run a fit:
 
-.. code-block::
+.. code-block:: bash
 
    speedyfit <object_name_setupfile.yaml>
