@@ -1,6 +1,8 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/speedyfit)
 [![PyPI](https://img.shields.io/pypi/v/speedyfit)](https://pypi.org/project/speedyfit/)
+[![Documentation Status](https://readthedocs.org/projects/speedyfit/badge/?version=latest)](https://speedyfit.readthedocs.io/en/latest/?badge=latest)
 [![GitHub](https://img.shields.io/github/license/vosjo/speedyfit)](https://github.com/vosjo/speedyfit/blob/master/LICENSE)
+
 
 # Speedyfit
 
@@ -67,7 +69,12 @@ atmosphere models.
 To uninstall Speedyfit, run:
 
     pip uninstall speedyfit
-    
+
+## Documentation
+
+The detailed documentation is a work in progress.you can read the current version at:
+[speedyfit.readthedocs.io](https://speedyfit.readthedocs.io/en/latest/)
+
 ## Searching for photometry
 
 Speedyfit can automatically download photometry from several of the large surveys, and many smaller studies available 
