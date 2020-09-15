@@ -1,12 +1,8 @@
-Photometry
-==========
-
+Catalogs
+========
 Speedyfit can automatically obtain photometry from several large online databases, using both Vizier and TAP queries.
 It will use simbad to find the coordinates for your system, and will do a search based on those coordinates. The
 included catalogs are given below:
-
-Photometry Catalogs
--------------------
 
 Gaia DR2 (Optical)
 ^^^^^^^^^^^^^^^^^^
@@ -60,8 +56,10 @@ This catalog is queried through Vizier: `II/336/apass9 <https://vizier.u-strasbg
 
 Cite as: `Henden et al. 2015, AAS <https://ui.adsabs.harvard.edu/abs/2015AAS...22533616H>`_
 
-Note: The 10th datarelease of APASS is public, but can not be automatically queried. You can include this data by hand by obtaining it from:
-https://www.aavso.org/apass-dr10-download
+.. note::
+
+    The 10th datarelease of APASS is public, but can not be automatically queried. You can include this data by hand by
+    obtaining it from: https://www.aavso.org/apass-dr10-download
 
 SDSS (Optical)
 ^^^^^^^^^^^^^^
@@ -96,8 +94,10 @@ This catalog is queried through Vizier: `J/A+A/580/A23/catalog <https://vizier.u
 
 Cite as: `Paunzen et al. 2015, A&A <https://ui.adsabs.harvard.edu/abs/2015A%26A...580A..23P>`_
 
-Note: as this is a compilation catalog, you should reference the original catalog that contains the measurements for the
-system that you are studying.
+.. note::
+
+    As this is a compilation catalog, you should reference the original catalog that contains the measurements for the
+    system that you are studying.
 
 2MASS (IR)
 ^^^^^^^^^^
@@ -126,18 +126,3 @@ This catalog is queried through Vizier: `II/311/wise <https://vizier.u-strasbg.f
 
 Cite as: `Cutri et al. 2012, yCat <http://cdsads.u-strasbg.fr/abs/2012yCat.2311....0C>`_
 
-Downloading photometry
-----------------------
-
-Downloading photometry for a target can be done through the command line by adding the '--phot' option when using the
-'empty' function of speedyfit. Or by using the 'get_photometry' function.
-
-Command line use
-^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   speedyfit <object_name> -empty single --phot
-
-Will download all photometry that speedyfit can find from the above catalogs and store it in a file called
-'object_name.phot'

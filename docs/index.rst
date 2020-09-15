@@ -12,7 +12,7 @@ Speedyfit
    
    userguide/install
    userguide/quickstart
-   userguide/photometry
+   userguide/catalogs
 
 
 

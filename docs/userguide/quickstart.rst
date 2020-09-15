@@ -10,7 +10,8 @@ on Vizier. By default only photometry from the following large and well calibrat
 - Gaia DR2
 - Sky Mapper DR1
 - APASS DR9
-- SDSS
+- SDSS DR9
+- Stromgren compilation catalog of Paunzen
 - 2MASS
 - WISE
 
