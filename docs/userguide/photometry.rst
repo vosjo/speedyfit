@@ -63,6 +63,42 @@ Cite as: `Henden et al. 2015, AAS <https://ui.adsabs.harvard.edu/abs/2015AAS...2
 Note: The 10th datarelease of APASS is public, but can not be automatically queried. You can include this data by hand by obtaining it from:
 https://www.aavso.org/apass-dr10-download
 
+SDSS (Optical)
+^^^^^^^^^^^^^^
+
+The 9th data release of the Sloan Digital Sky Survey: http://www.sdss3.org/dr9/. Included photometric bands are:
+
+- SDSS.U
+- SDSS.G
+- SDSS.R
+- SDSS.I
+- SDSS.Z
+
+This catalog is queried through Vizier: `V/139/sdss9 <https://vizier.u-strasbg.fr/viz-bin/VizieR-3?-source=V/139/sdss9>`_
+
+Cite as: `Ahn et al. 2012, ApJS <https://ui.adsabs.harvard.edu/abs/2012ApJS..203...21A>`_
+
+Stroemgren-Crawford (Optical)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is the new catalogue of Strömgren-Crawford uvbyβ photometry created by Paunzen, E. by combining Stromgren
+photometry from all existing catalogs. Included photometric bands are:
+
+- STROMGREN.Y
+- STROMGREN.B-Y
+- STROMGREN.M1
+- STROMGREN.C1
+- STROMGREN.HBN-HBW (Limited availablility)
+
+These measurements are automatically converted to Stromgren u, v, b, y and beta.
+
+This catalog is queried through Vizier: `J/A+A/580/A23/catalog <https://vizier.u-strasbg.fr/viz-bin/VizieR-3?-source=J/A+A/580/A23/catalog>`_
+
+Cite as: `Paunzen et al. 2015, A&A <https://ui.adsabs.harvard.edu/abs/2015A%26A...580A..23P>`_
+
+Note: as this is a compilation catalog, you should reference the original catalog that contains the measurements for the
+system that you are studying.
+
 2MASS (IR)
 ^^^^^^^^^^
 
