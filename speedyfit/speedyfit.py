@@ -9,7 +9,7 @@ from astropy.io import ascii
 
 from numpy.lib.recfunctions import append_fields, repack_fields
 
-from . import mcmc, model, plotting, fileio, filters
+from speedyfit import mcmc, model, plotting, fileio, filters, photometry_query
 
 default_single = """
 # photometry file with index to the columns containing the photbands, observations and errors
@@ -169,8 +169,6 @@ def main():
     args, variables = parser.parse_known_args()
 
     if args.empty is not None:
-
-        from . import photometry_query
 
         objectname = args.filename
         filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_binary.yaml'
@@ -340,30 +338,9 @@ def main():
         results[p] = [results[p], v, e1, e2]
         pars[p] = v
 
-    ##-- calculate the Chi2 of the 50th percentile results
-    # y_syn, extra_drv = model.get_itable(**pars)
-    # chi2, _, _ = stat_func(obs,
-    # obs_err,
-    # colors, y_syn, pars,
-    # constraints=constraints)
-    # results['chi2'] = [results['chi2'][0], chi2, results['chi2'][2], results['chi2'][3]]
-
     print("   Par             Best        Pc       emin       emax")
     for p in samples.dtype.names:
         print("   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p])))
-
-    # out = ""
-    # out += "{:0.0f}\t{:0.0f}\t".format(results['teff'][1], np.average([results['teff'][2],results['teff'][3]]))
-    # for par in ['logg', 'L', 'rad']:
-    #    out += "{:0.3f}\t{:0.3f}\t".format(results[par][1],
-    #                                       np.average([results[par][2],results[par][3]]))
-    # if 'teff2' in results:
-    #    out += "{:0.0f}\t{:0.0f}\t".format(results['teff2'][1], np.average([results['teff2'][2],results['teff2'][3]]))
-    #    for par in ['logg2', 'L2', 'rad2']:
-    #       out += "{:0.3f}\t{:0.3f}\t".format(results[par][1],
-    #                                        np.average([results[par][2],results[par][3]]))
-    # out += "{:0.0f}\t{:0.0f}\t".format(results['d'][1], np.average([results['d'][2],results['d'][3]]))
-    # print out
 
     outpars, outvals = [], []
     for par in ['teff', 'logg', 'L', 'rad']:
