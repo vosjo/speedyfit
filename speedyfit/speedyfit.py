@@ -113,6 +113,10 @@ def select_photometry(photbands, obs, obs_err, remove_nan=True, remove_color=Tru
    """
 
     # -- remove photometry with nan values in measurement or error.
+
+    print (obs)
+    print (obs_err)
+
     if remove_nan:
         nani = np.isnan(obs) | np.isnan(obs_err)
         if any(nani) and verbose:
