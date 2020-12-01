@@ -1,12 +1,15 @@
-
+import copy
 import os
 import argparse
+
+import yaml
 
 import pandas as pd
 
 from astropy.coordinates import Angle
 
 from speedyfit import photometry_query
+from speedyfit.speedyfit import fit_sed, get_observations
 from speedyfit.default_setup import default_double, default_single
 
 
@@ -15,19 +18,21 @@ def process_objects(data):
     def convert_ra(ra):
         if ' ' in str(ra).strip() or ':' in str(ra).strip():
             ra = str(ra).strip()
-            ra.replace(' ', ':')
+            ra = ra.replace(' ', '').replace(':', '')
         else:
             a = Angle(ra, unit='degree').hms
-            ra = '{:02.0f}:{:02.0f}:{:05.2f}'.format(*a)
+            ra = '{:02.0f}{:02.0f}{:05.2f}'.format(*a)
         return ra
 
     def convert_dec(dec):
         if ' ' in str(dec).strip() or ':' in str(dec).strip():
             dec = str(dec).strip()
-            dec.replace(' ', ':')
+            dec = dec.replace(' ', '').replace(':', '')
+            if not '-' in dec and not '+' in dec:
+                dec = '+' + dec
         else:
             a = Angle(dec, unit='degree').dms
-            dec = '{:+03.0f}:{:02.0f}:{:05.2f}'.format(a[0], abs(a[1]), abs(a[2]))
+            dec = '{:+03.0f}{:02.0f}{:05.2f}'.format(a[0], abs(a[1]), abs(a[2]))
         return dec
 
     if 'name' in data.columns.values:
@@ -65,14 +70,14 @@ def read_setup(setup):
 
 def prepare_setup(object_list, basedir, default_setup):
 
-    for i, objectname in object_list.iter_lines():
+    for objectname in object_list:
 
         if not os.path.isdir(basedir+'/'+objectname):
             os.mkdir(basedir+'/'+objectname)
 
         plx, e_plx = photometry_query.get_parallax(objectname)
 
-        out = default_setup.copy()
+        out = copy.copy(default_setup)
         if '<photfilename>' in out:
             out = out.replace('<photfilename>', objectname + '.phot')
         if '<objectname>' in out:
@@ -90,7 +95,7 @@ def prepare_setup(object_list, basedir, default_setup):
 
 def prepare_photometry(object_list, basedir, skip_existing=True):
 
-    for i, objectname in object_list.iter_lines():
+    for objectname in object_list:
 
         if os.path.isfile(basedir+'/'+objectname+'/'+objectname+'.phot') and skip_existing:
             continue
@@ -103,6 +108,29 @@ def prepare_photometry(object_list, basedir, skip_existing=True):
         except Exception as e:
             print("Failed to obtain photometry for {}".format(objectname))
             print(e)
+
+def fit_seds(object_list, basedir):
+
+    for objectname in object_list:
+
+        # read the setup
+        filename = basedir + '/' + objectname + '/' + objectname + '_setup.yaml'
+        try:
+            infile = open(filename)
+            setup = yaml.safe_load(infile)
+            infile.close()
+        except Exception as e:
+            print("Could not read setupfile for {}".format(objectname))
+            print(e)
+            continue
+
+        try:
+            photbands, obs, obs_err = get_observations(setup)
+            fit_sed(setup, photbands, obs, obs_err)
+        except Exception as e:
+            print("Could not fit {}".format(objectname))
+            print(e)
+
 
 
 def main():
