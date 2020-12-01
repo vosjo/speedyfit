@@ -10,7 +10,7 @@ from speedyfit import photometry_query
 from speedyfit.default_setup import default_double, default_single
 
 
-def process_objects(filename):
+def process_objects(data):
 
     def convert_ra(ra):
         if ' ' in str(ra).strip() or ':' in str(ra).strip():
@@ -18,7 +18,7 @@ def process_objects(filename):
             ra.replace(' ', ':')
         else:
             a = Angle(ra, unit='degree').hms
-            ra = '{:.0f}:{:.0f}:{:.2f}'.format(*a)
+            ra = '{:02.0f}:{:02.0f}:{:05.2f}'.format(*a)
         return ra
 
     def convert_dec(dec):
@@ -26,24 +26,20 @@ def process_objects(filename):
             dec = str(dec).strip()
             dec.replace(' ', ':')
         else:
-            a = Angle(ra, unit='degree').dms
-            dec = '{:.0f}:{:.0f}:{:.2f}'.format(*a)
-            pass
-
+            a = Angle(dec, unit='degree').dms
+            dec = '{:+03.0f}:{:02.0f}:{:05.2f}'.format(a[0], abs(a[1]), abs(a[2]))
         return dec
-
-    data = pd.read(filename)
 
     if 'name' in data.columns.values:
         object_list = data['name'].apply(lambda x: x.replace(' ', '_')).values
     else:
         # deal with coordinates
-        ra = data['ra'].apply(convert_ra)
-        dec = data['dec'].apply(convert_dec)
+        ra_ = data['ra'].apply(convert_ra)
+        dec_ = data['dec'].apply(convert_dec)
 
+        name = ['J{}{}'.format(r, d) for r, d in zip(ra_, dec_)]
 
-
-        pass
+        object_list = pd.Series(data=name)
 
     return object_list
 
@@ -132,7 +128,8 @@ def main():
     if not os.path.isdir(basedir):
         os.mkdir(basedir)
 
-    object_list = process_objects(args.filename)
+    object_data = pd.read_csv(args.filename)
+    object_list = process_objects(object_data)
 
     # create the setup file for all systems
     prepare_setup(object_list, basedir, default_setup)
