@@ -17,18 +17,14 @@ from speedyfit.default_setup import default_double, default_single
 def select_photometry(photbands, obs, obs_err, remove_nan=True, remove_color=True, include=None, exclude=None,
                       verbose=True):
     """
-   Function to select the wanted photometry.
+    Function to select the wanted photometry.
 
-   - removes photometry with nan values in value or error
-   - removed colors
-   - selects photometry based on include and exclude arrays
-   """
+    - removes photometry with nan values in value or error
+    - removed colors
+    - selects photometry based on include and exclude arrays
+    """
 
     # -- remove photometry with nan values in measurement or error.
-
-    print (obs)
-    print (obs_err)
-
     if remove_nan:
         nani = np.isnan(obs) | np.isnan(obs_err)
         if any(nani) and verbose:
@@ -72,48 +68,8 @@ def select_photometry(photbands, obs, obs_err, remove_nan=True, remove_color=Tru
 
     return photbands, obs, obs_err
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('filename', action="store", type=str, help='use setup given in this file')
-    parser.add_argument("-empty", dest='empty', type=str, default=None,
-                        help="Create empty setup file ('single' or 'double')")
-    parser.add_argument('--phot', dest='photometry', action='store_true',
-                        help='When creating a new setupfile, use this option to also download photometry from Vizier and Tap archives.')
-    parser.add_argument('--noplot', dest='noplot', action='store_true',
-                        help="Don't show any plots, only store to disk.")
-    args, variables = parser.parse_known_args()
 
-    if args.empty is not None:
-
-        objectname = args.filename
-        filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_binary.yaml'
-
-        plx, e_plx = photometry_query.get_parallax(objectname)
-
-        out = default_single if args.empty == 'single' else default_double
-        out = out.replace('<photfilename>', objectname + '.phot')
-        out = out.replace('<objectname>', objectname)
-        out = out.replace('<plx>', str(plx))
-        out = out.replace('<e_plx>', str(e_plx))
-
-        ofile = open(filename, 'w')
-        ofile.write(out)
-        ofile.close()
-
-        if args.photometry:
-            photometry = photometry_query.get_photometry(objectname, filename=objectname + '.phot')
-
-        sys.exit()
-
-    if args.filename is None:
-        print("Nothing to do")
-        sys.exit()
-
-    # -- load the setup file
-    setupfile = open(args.filename)
-    setup = yaml.safe_load(setupfile)
-    setupfile.close()
-
+def get_observations(setup):
     # -- parse photometry
     if isinstance(setup['photband_index'], str):
         data = ascii.read(setup['photometryfile'], format='fixed_width')
@@ -131,10 +87,15 @@ def main():
         obs = np.array(data[setup['obs_index']])
         obs_err = np.array(data[setup['err_index']])
 
-    #-- select the requested photometry
+    # -- select the requested photometry
     photbands, obs, obs_err = select_photometry(photbands, obs, obs_err, remove_nan=True, remove_color=True,
                                                 include=setup.get('photband_include', None),
                                                 exclude=setup.get('photband_exclude', None))
+
+    return photbands, obs, obs_err
+
+
+def fit_sed(setup, photbands, obs, obs_err):
 
     # -- pars limits
     pnames = setup['pnames']
@@ -150,7 +111,7 @@ def main():
         p, pm, pp = constraints.pop('parallax')
         constraints['distance'] = [1000. / p, 1000. * pm / p ** 2, 1000. * pp / p ** 2]
 
-    print ("Applied constraints: ")
+    print("Applied constraints: ")
     for con, val in list(constraints.items()):
         print("\t {} = {} - {} + {}".format(con, val[0], val[1], val[2]))
 
@@ -206,7 +167,6 @@ def main():
     nsteps = setup.get('nsteps', 2000)
     nrelax = setup.get('nrelax', 500)
     a = setup.get('a', 10)
-    percentiles = setup.get('percentiles', [16, 50, 84])
 
     # -- MCMC
     results, samples = mcmc.MCMC(obs, obs_err, photbands,
@@ -243,10 +203,61 @@ def main():
     if 'g2' in names: names.remove('g2')
     samples = samples[names]
 
+    return results, samples, constraints, gridnames
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename', action="store", type=str, help='use setup given in this file')
+    parser.add_argument("-empty", dest='empty', type=str, default=None,
+                        help="Create empty setup file ('single' or 'double')")
+    parser.add_argument('--phot', dest='photometry', action='store_true',
+                        help='When creating a new setupfile, use this option to also download photometry from Vizier and Tap archives.')
+    parser.add_argument('--noplot', dest='noplot', action='store_true',
+                        help="Don't show any plots, only store to disk.")
+    args, variables = parser.parse_known_args()
+
+    if args.empty is not None:
+
+        objectname = args.filename
+        filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_binary.yaml'
+
+        plx, e_plx = photometry_query.get_parallax(objectname)
+
+        out = default_single if args.empty == 'single' else default_double
+        out = out.replace('<photfilename>', objectname + '.phot')
+        out = out.replace('<objectname>', objectname)
+        out = out.replace('<plx>', str(plx))
+        out = out.replace('<e_plx>', str(e_plx))
+
+        ofile = open(filename, 'w')
+        ofile.write(out)
+        ofile.close()
+
+        if args.photometry:
+            photometry = photometry_query.get_photometry(objectname, filename=objectname + '.phot')
+
+        sys.exit()
+
+    if args.filename is None:
+        print("Nothing to do")
+        sys.exit()
+
+    # -- load the setup file
+    setupfile = open(args.filename)
+    setup = yaml.safe_load(setupfile)
+    setupfile.close()
+
+    # -- obtain the observations
+    photbands, obs, obs_err = get_observations(setup)
+
+    # -- perform the SED fit
+    results, samples, constraints, gridnames = fit_sed(setup, photbands, obs, obs_err)
+
     print("================================================================================")
     print("")
     print("Resulting parameter values and errors:")
 
+    percentiles = setup.get('percentiles', [16, 50, 84])
     pc = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), percentiles, axis=0)
     pars = {}
     for p, v, e1, e2 in zip(samples.dtype.names, pc[1], pc[1] - pc[0], pc[2] - pc[1]):

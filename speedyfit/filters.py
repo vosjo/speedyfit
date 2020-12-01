@@ -46,6 +46,9 @@ def mag2flux(mag, error, photband):
    
    Flux is returned in units of erg/s/cm2/AA
    """
+
+   # Todo: Deal with stromgren colours!!!
+
    data = ascii.read(os.path.join(basedir, 'zeropoints.dat'), comment="\s*#")
    
    if not isinstance(photband, str):
@@ -53,7 +56,7 @@ def mag2flux(mag, error, photband):
       for i, (m, e, b) in enumerate(zip(mag, error, photband)):
          
          s = np.where(data['photband'] == b)
-         
+
          F0 = data['Flam0'][s][0]
          zpcor = data['zp_corr'][s][0]
          
