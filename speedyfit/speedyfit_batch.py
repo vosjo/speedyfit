@@ -9,7 +9,7 @@ import pandas as pd
 from astropy.coordinates import Angle
 
 from speedyfit import photometry_query
-from speedyfit.speedyfit import fit_sed, get_observations
+from speedyfit.speedyfit import fit_sed, get_observations, write_results, plot_results
 from speedyfit.default_setup import default_double, default_single
 
 
@@ -52,10 +52,10 @@ def process_objects(data):
 def read_setup(setup):
 
     if os.path.isfile(setup):
-        infile = os.open(setup, 'r')
-        setup = infile.read_lines()
+        infile = open(setup, 'r')
+        setup = infile.readlines()
         infile.close()
-        setup = '/n'.join(setup)
+        setup = ''.join(setup)
 
     elif setup == 'single':
         setup = default_single
@@ -79,9 +79,11 @@ def prepare_setup(object_list, basedir, default_setup):
 
         out = copy.copy(default_setup)
         if '<photfilename>' in out:
-            out = out.replace('<photfilename>', objectname + '.phot')
+            photfilename_ = basedir + '/' + objectname + '/' + objectname + '.phot'
+            out = out.replace('<photfilename>', photfilename_)
         if '<objectname>' in out:
-            out = out.replace('<objectname>', objectname)
+            objectname_ = basedir + '/' + objectname + '/' + objectname
+            out = out.replace('<objectname>', objectname_)
         if '<plx>' in out:
             out = out.replace('<plx>', str(plx))
             out = out.replace('<e_plx>', str(e_plx))
@@ -104,12 +106,16 @@ def prepare_photometry(object_list, basedir, skip_existing=True):
             os.mkdir(basedir+'/'+objectname)
 
         try:
-            photometry = photometry_query.get_photometry(objectname, filename=objectname + '.phot')
+            filename = basedir + '/' + objectname + '/' + objectname + '.phot'
+            photometry = photometry_query.get_photometry(objectname, filename=filename)
         except Exception as e:
             print("Failed to obtain photometry for {}".format(objectname))
             print(e)
 
+
 def fit_seds(object_list, basedir):
+
+    all_results = {}
 
     for objectname in object_list:
 
@@ -125,11 +131,31 @@ def fit_seds(object_list, basedir):
             continue
 
         try:
+            # get the photometry
             photbands, obs, obs_err = get_observations(setup)
-            fit_sed(setup, photbands, obs, obs_err)
+
+            # do the SED fit
+            results, samples, constraints, gridnames = fit_sed(setup, photbands, obs, obs_err)
+
+            # add results to results dic
+            all_results.setdefault('objectname', []).append(objectname)
+            for k, v in results.items():
+                all_results.setdefault(k, []).append(v[0])
+                all_results.setdefault(k+'_err', []).append(( v[2] + v[3] ) / 2.0)
+
+            # write the results
+            write_results(setup, results, samples, obs, obs_err, photbands)
+
+            # make any requested plots
+            plot_results(setup, results, samples, constraints, gridnames, obs, obs_err, photbands)
+
         except Exception as e:
             print("Could not fit {}".format(objectname))
             print(e)
+
+    all_results = pd.DataFrame(data=all_results)
+    all_results.to_csv('results.csv')
+    print(all_results)
 
 
 
@@ -168,4 +194,4 @@ def main():
 
     # fit all systems if requested
     if args.fit:
-        pass
+        fit_seds(object_list, basedir)

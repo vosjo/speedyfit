@@ -203,60 +203,6 @@ def fit_sed(setup, photbands, obs, obs_err):
     if 'g2' in names: names.remove('g2')
     samples = samples[names]
 
-    return results, samples, constraints, gridnames
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('filename', action="store", type=str, help='use setup given in this file')
-    parser.add_argument("-empty", dest='empty', type=str, default=None,
-                        help="Create empty setup file ('single' or 'double')")
-    parser.add_argument('--phot', dest='photometry', action='store_true',
-                        help='When creating a new setupfile, use this option to also download photometry from Vizier and Tap archives.')
-    parser.add_argument('--noplot', dest='noplot', action='store_true',
-                        help="Don't show any plots, only store to disk.")
-    args, variables = parser.parse_known_args()
-
-    if args.empty is not None:
-
-        objectname = args.filename
-        filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_binary.yaml'
-
-        plx, e_plx = photometry_query.get_parallax(objectname)
-
-        out = default_single if args.empty == 'single' else default_double
-        out = out.replace('<photfilename>', objectname + '.phot')
-        out = out.replace('<objectname>', objectname)
-        out = out.replace('<plx>', str(plx))
-        out = out.replace('<e_plx>', str(e_plx))
-
-        ofile = open(filename, 'w')
-        ofile.write(out)
-        ofile.close()
-
-        if args.photometry:
-            photometry = photometry_query.get_photometry(objectname, filename=objectname + '.phot')
-
-        sys.exit()
-
-    if args.filename is None:
-        print("Nothing to do")
-        sys.exit()
-
-    # -- load the setup file
-    setupfile = open(args.filename)
-    setup = yaml.safe_load(setupfile)
-    setupfile.close()
-
-    # -- obtain the observations
-    photbands, obs, obs_err = get_observations(setup)
-
-    # -- perform the SED fit
-    results, samples, constraints, gridnames = fit_sed(setup, photbands, obs, obs_err)
-
-    print("================================================================================")
-    print("")
-    print("Resulting parameter values and errors:")
-
     percentiles = setup.get('percentiles', [16, 50, 84])
     pc = np.percentile(samples.view(np.float64).reshape(samples.shape + (-1,)), percentiles, axis=0)
     pars = {}
@@ -264,9 +210,10 @@ def main():
         results[p] = [results[p], v, e1, e2]
         pars[p] = v
 
-    print("   Par             Best        Pc       emin       emax")
-    for p in samples.dtype.names:
-        print("   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p])))
+    return results, samples, constraints, gridnames
+
+
+def write_results(setup, results, samples, obs, obs_err, photbands):
 
     outpars, outvals = [], []
     for par in ['teff', 'logg', 'L', 'rad']:
@@ -302,8 +249,10 @@ def main():
         fileio.write_summary2hdf5(setup['objectname'], samples, obs, obs_err, photbands, pars=results,
                                   grids=setup['grids'], filename=h5file)
 
-    # -- Plotting
 
+def plot_results(setup, results, samples, constraints, gridnames, obs, obs_err, photbands):
+
+    # check for 10 possible plots. Should be enough for now.
     for i in range(10):
 
         pindex = 'plot' + str(i)
@@ -353,6 +302,68 @@ def main():
 
             if not setup[pindex].get('path', None) is None:
                 pl.savefig(setup[pindex].get('path', 'distribution.png'))
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename', action="store", type=str, help='use setup given in this file')
+    parser.add_argument("-empty", dest='empty', type=str, default=None,
+                        help="Create empty setup file ('single' or 'double')")
+    parser.add_argument('--phot', dest='photometry', action='store_true',
+                        help='When creating a new setupfile, use this option to also download photometry from Vizier and Tap archives.')
+    parser.add_argument('--noplot', dest='noplot', action='store_true',
+                        help="Don't show any plots, only store to disk.")
+    args, variables = parser.parse_known_args()
+
+    if args.empty is not None:
+
+        objectname = args.filename
+        filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_binary.yaml'
+
+        plx, e_plx = photometry_query.get_parallax(objectname)
+
+        out = default_single if args.empty == 'single' else default_double
+        out = out.replace('<photfilename>', objectname + '.phot')
+        out = out.replace('<objectname>', objectname)
+        out = out.replace('<plx>', str(plx))
+        out = out.replace('<e_plx>', str(e_plx))
+
+        ofile = open(filename, 'w')
+        ofile.write(out)
+        ofile.close()
+
+        if args.photometry:
+            photometry = photometry_query.get_photometry(objectname, filename=objectname + '.phot')
+
+        sys.exit()
+
+    if args.filename is None:
+        print("Nothing to do")
+        sys.exit()
+
+    # -- load the setup file
+    setupfile = open(args.filename)
+    setup = yaml.safe_load(setupfile)
+    setupfile.close()
+
+    # -- obtain the observations
+    photbands, obs, obs_err = get_observations(setup)
+
+    # -- perform the SED fit
+    results, samples, constraints, gridnames = fit_sed(setup, photbands, obs, obs_err)
+
+    # -- write the results
+    write_results(setup, results, samples, obs, obs_err, photbands)
+
+    # -- create plots
+    plot_results(setup, results, samples, constraints, gridnames, obs, obs_err, photbands)
+
+    print("================================================================================")
+    print("")
+    print("Resulting parameter values and errors:")
+    print("   Par             Best        Pc       emin       emax")
+    for p in samples.dtype.names:
+        print("   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p])))
 
     if not args.noplot:
         pl.show()

@@ -33,7 +33,7 @@ setuptools.setup(
     test_suite='pytest.collector',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': ['speedyfit=speedyfit.speedyfit:main'],
+        'console_scripts': ['speedyfit=speedyfit.speedyfit:main', 'speedyfit-batch=speedyfit.speedyfit_batch:main'],
     },
     classifiers=[
         "Development Status :: 3 - Alpha",
