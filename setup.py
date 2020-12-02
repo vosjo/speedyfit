@@ -20,7 +20,7 @@ install_requires = [
 
 setuptools.setup(
     name="speedyfit", # Replace with your own username
-    version="0.0.2",
+    version="0.0.3",
     author="Joris Vos",
     author_email="joris.vos@uv.cl",
     description="MC approach to fit photometric SEDs",
