@@ -10,7 +10,7 @@ from astropy.coordinates import Angle
 
 from speedyfit import photometry_query
 from speedyfit.speedyfit import fit_sed, get_observations, write_results, plot_results
-from speedyfit.default_setup import default_double, default_single
+from speedyfit.default_setup import default_tmap, default_binary
 
 
 def process_objects(data):
@@ -58,12 +58,12 @@ def read_setup(setup):
         setup = ''.join(setup)
 
     elif setup == 'single':
-        setup = default_single
+        setup = default_tmap
     elif setup == 'double':
-        setup = default_double
+        setup = default_binary
     else:
         print('Setup not recognized! Using single as default')
-        setup = default_single
+        setup = default_tmap
 
     return setup
 
@@ -84,9 +84,9 @@ def prepare_setup(object_list, basedir, default_setup):
         if '<objectname>' in out:
             objectname_ = basedir + '/' + objectname + '/' + objectname
             out = out.replace('<objectname>', objectname_)
-        if '<plx>' in out:
-            out = out.replace('<plx>', str(plx))
-            out = out.replace('<e_plx>', str(e_plx))
+        if '<constraints>' in out:
+            constraints = "\n  parallax: [{:0.4f}, {:0.4f}]".format(plx, e_plx)
+            out = out.replace('<constraints>', constraints)
 
         filename = basedir + '/' + objectname + '/' + objectname + '_setup.yaml'
 

@@ -1,4 +1,3 @@
-import sys
 import yaml
 import argparse
 import numpy as np
@@ -10,8 +9,7 @@ from astropy.io import ascii
 from numpy.lib.recfunctions import append_fields, repack_fields
 
 from speedyfit import mcmc, model, plotting, fileio, filters, photometry_query
-from speedyfit.default_setup import default_double, default_single
-
+from speedyfit.default_setup import default_binary, default_single
 
 
 def select_photometry(photbands, obs, obs_err, remove_nan=True, remove_color=True, include=None, exclude=None,
@@ -237,12 +235,7 @@ def write_results(setup, results, samples, obs, obs_err, photbands):
 
     datafile = setup.get('datafile', None)
     if not datafile is None:
-        # -- get plain text settings to retain comments and ordering
-        setupfile = open(args.filename)
-        setup_str = "".join(setupfile.readlines())
-        setupfile.close()
-
-        fileio.write2fits(samples, datafile, setup=setup_str)
+        fileio.write2fits(samples, datafile, setup=setup)
 
     h5file = setup.get('h5file', None)
     if h5file is not None:
@@ -263,6 +256,7 @@ def plot_results(setup, results, samples, constraints, gridnames, obs, obs_err, 
             res = setup[pindex].get('result', 'best')
 
             pl.figure(i)
+            pl.clf()
             pl.subplots_adjust(wspace=0.25)
             plotting.plot_fit(obs, obs_err, photbands, pars=results, constraints=constraints, grids=setup['grids'],
                               gridnames=gridnames, result=res)
@@ -273,6 +267,7 @@ def plot_results(setup, results, samples, constraints, gridnames, obs, obs_err, 
         if setup[pindex]['type'] == 'constraints':
 
             pl.figure(i, figsize=(2 * len(constraints), 6))
+            pl.clf()
             pl.subplots_adjust(wspace=0.40, left=0.07, right=0.98)
 
             plotting.plot_constraints(constraints, samples, results)
@@ -304,47 +299,83 @@ def plot_results(setup, results, samples, constraints, gridnames, obs, obs_err, 
                 pl.savefig(setup[pindex].get('path', 'distribution.png'))
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('filename', action="store", type=str, help='use setup given in this file')
-    parser.add_argument("-empty", dest='empty', type=str, default=None,
-                        help="Create empty setup file ('single' or 'double')")
-    parser.add_argument('--phot', dest='photometry', action='store_true',
-                        help='When creating a new setupfile, use this option to also download photometry from Vizier and Tap archives.')
-    parser.add_argument('--noplot', dest='noplot', action='store_true',
-                        help="Don't show any plots, only store to disk.")
-    args, variables = parser.parse_known_args()
+# ====================================================================================================================
+# Command line stuff below.
 
-    if args.empty is not None:
+def create_setup(args):
+    object_name = args. object_name
+    grid  = args.grid
+    parallax = args.parallax
+    photometry = args.photometry
 
-        objectname = args.filename
-        filename = objectname + '_single.yaml' if args.empty == 'single' else objectname + '_binary.yaml'
+    filename = "{}_setup_{}.yaml".format(object_name, grid)
 
-        plx, e_plx = photometry_query.get_parallax(objectname)
+    # excluded photometry
+    if grid == 'munari':
+        photband_exclude = "['GALEX', 'SDSS', 'WISE']"
+    else:
+        photband_exclude = "['GALEX', 'SDSS', 'WISE.W3', 'WISE.W4']"
 
-        out = default_single if args.empty == 'single' else default_double
-        out = out.replace('<photfilename>', objectname + '.phot')
-        out = out.replace('<objectname>', objectname)
-        out = out.replace('<plx>', str(plx))
-        out = out.replace('<e_plx>', str(e_plx))
+    # parameter ranges
+    if grid != 'binary':
+        ranges = model.get_grid_ranges(grid=grid)
+        ranges['ebv'] = (0, 0.10)
 
-        ofile = open(filename, 'w')
-        ofile.write(out)
-        ofile.close()
+        parameter_limits = ""
+        for par in ['teff', 'logg', 'rad', 'ebv']:
+            parameter_limits += "\n- [{}, {}]".format(ranges[par][0], ranges[par][1])
+    else:
+        parameter_limits = "- [3500, 10000] \n- [4.31, 4.31] \n- [0.01, 2.5] \n"\
+                     "- [20000, 50000] \n- [5.8, 5.8] \n- [0.01, 0.5] \n- [0, 0.10]"
 
-        if args.photometry:
-            photometry = photometry_query.get_photometry(objectname, filename=objectname + '.phot')
+    # constraints
+    if parallax:
+        plx, e_plx = photometry_query.get_parallax(object_name)
+        constraints = "\n  parallax: [{:0.4f}, {:0.4f}]".format(plx, e_plx)
+    else:
+        constraints = "{}"
 
-        sys.exit()
+    # grids
+    if grid == 'binary':
+        model_grids = "- kurucz\n- tmap"
+    else:
+        model_grids = "- {}".format(grid)
 
-    if args.filename is None:
-        print("Nothing to do")
-        sys.exit()
+    out = default_single if grid != 'binary' else default_binary
+    out = out.replace('<objectname>', object_name)
+    out = out.replace('<photfilename>', object_name + '.phot')
+    out = out.replace('<photband_exclude>', photband_exclude)
+    out = out.replace('<parameter_limits>', parameter_limits)
+    out = out.replace('<constraints>', constraints)
+    out = out.replace('<model_grids>', model_grids)
+    out = out.replace('<postfix>', grid)
+
+    ofile = open(filename, 'w')
+    ofile.write(out)
+    ofile.close()
+
+    if photometry:
+        photometry = photometry_query.get_photometry(object_name, filename=object_name + '.phot')
+
+
+def get_photometry(args):
+    object_name = args.object_name
+    outputfile = args.output_file
+
+    if outputfile is None:
+        outputfile = object_name + '.phot'
+
+    photometry = photometry_query.get_photometry(object_name, filename=outputfile)
+
+
+def perform_fit(args):
+    setup_file = args.setup_file
+    noplot = args.noplot
 
     # -- load the setup file
-    setupfile = open(args.filename)
-    setup = yaml.safe_load(setupfile)
-    setupfile.close()
+    ifile = open(setup_file)
+    setup = yaml.safe_load(ifile)
+    ifile.close()
 
     # -- obtain the observations
     photbands, obs, obs_err = get_observations(setup)
@@ -365,8 +396,49 @@ def main():
     for p in samples.dtype.names:
         print("   {:10s} = {}   {}   -{}   +{}".format(p, *plotting.format_parameter(p, results[p])))
 
-    if not args.noplot:
+    if not noplot:
         pl.show()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Speedyfit: obtaining and fitting photometric SEDs")
+
+    subparsers = parser.add_subparsers(dest='action')
+
+    # --setup--
+    setup_parser = subparsers.add_parser('setup', help='Create yaml setup files for the SED fit')
+
+    setup_parser.add_argument('object_name', default=None,
+                             help='Name of the system resolvable by simbad, or of format J000000.0+000000.0')
+    setup_parser.add_argument('-grid', default='kurucz',
+                             help='The model grid to use (kurucz, munari, tmap or binary). Parameter ranges are set '
+                                  'automatically based on the grid name.')
+    setup_parser.add_argument('--nopx', dest='parallax', action='store_false',
+                             help='Do NOT obtain parallax from the Gaia DR2 catalog')
+    setup_parser.add_argument('--phot', dest='photometry', action='store_true',
+                             help='Query Vizier and Tap archived for photometry of this system')
+    setup_parser.set_defaults(func=create_setup)
+
+    # --photometry--
+    phot_parser = subparsers.add_parser('photometry', aliases=['phot'] , help='Get photometry from catalogs')
+
+    phot_parser.add_argument('object_name', default=None,
+                             help='Name of the system resolvable by simbad, or of format J000000.0+000000.0')
+    phot_parser.add_argument('-o', '-output', dest='output_file', default=None,
+                               help='The output file to store the obtained photometry')
+    phot_parser.set_defaults(func=get_photometry)
+
+    # --fit--
+    fit_parser = subparsers.add_parser('fit', help='Fit an SED based on the obtained photometry and setup file')
+
+    fit_parser.add_argument('setup_file', default=None,
+                            help='Name of the setup yaml file with all information necessary for the fit')
+    fit_parser.add_argument('--noplot', dest='noplot', action='store_true',
+                            help="Don't show any plots, only save to disk.")
+    fit_parser.set_defaults(func=perform_fit)
+
+    args = parser.parse_args()
+    args.func(args)
 
 
 if __name__ == "__main__":
