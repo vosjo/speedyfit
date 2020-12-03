@@ -1,5 +1,5 @@
-Catalogs
-========
+Photometry catalogs
+===================
 Speedyfit can automatically obtain photometry from several large online databases, using both Vizier and TAP queries.
 It will use simbad to find the coordinates for your system, and will do a search based on those coordinates. The
 included catalogs are given below:

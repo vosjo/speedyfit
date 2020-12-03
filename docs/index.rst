@@ -12,8 +12,11 @@ Speedyfit
    
    userguide/install
    userguide/quickstart
-   userguide/catalogs
-
+   userguide/command_line
+   userguide/setup_file
+   userguide/photometry_catalogs
+   userguide/photometry_file
+   userguide/model_grids
 
 
 Indices and tables

@@ -413,10 +413,10 @@ def main():
     setup_parser.add_argument('-grid', default='kurucz',
                              help='The model grid to use (kurucz, munari, tmap or binary). Parameter ranges are set '
                                   'automatically based on the grid name.')
+    setup_parser.add_argument('--phot', dest='photometry', action='store_true',
+                              help='Query Vizier and Tap archived for photometry of this system')
     setup_parser.add_argument('--nopx', dest='parallax', action='store_false',
                              help='Do NOT obtain parallax from the Gaia DR2 catalog')
-    setup_parser.add_argument('--phot', dest='photometry', action='store_true',
-                             help='Query Vizier and Tap archived for photometry of this system')
     setup_parser.set_defaults(func=create_setup)
 
     # --photometry--
