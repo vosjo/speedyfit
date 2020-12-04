@@ -22,7 +22,7 @@ You can download photometry for a given object as follows:
    speedyfit setup <object_name> --phot
 
 This will create a setup file called <object_name>_setup_kurucz.yaml where you can setup the fitting parameters and a
-photometry file <called object_name>.phot with the obtained photometry. The object name should be resolvable by simbad,
+photometry file called <object_name>.phot with the obtained photometry. The object name should be resolvable by simbad,
 or if that is not possible, a J-type coordinate. For example, to obtain photometry of the star 'EO Ceti' the following
 object names will work: 'EO Ceti', 'J012343.24-050545.83' and any other alias that is recoginzed by simbad.
 

@@ -17,6 +17,7 @@ Speedyfit
    userguide/photometry_catalogs
    userguide/photometry_file
    userguide/model_grids
+   userguide/making_figures
 
 
 Indices and tables
