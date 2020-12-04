@@ -64,7 +64,7 @@ Photometry setup
 
 .. option:: photband_index (str or int)
 
-    The name or index of the column in the photometry file that contains the name of the photometric band. See
+    The name or index of the column in the photometry file that contains the names of the photometric bands. See
     :doc:`photometry_file` for more details.
 
 .. option:: obs_index (str or int)
