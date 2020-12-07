@@ -329,11 +329,12 @@ def create_setup(args):
                      "- [20000, 50000] \n- [5.8, 5.8] \n- [0.01, 0.5] \n- [0, 0.10]"
 
     # constraints
+    constraints = "{}"
     if parallax:
         plx, e_plx = photometry_query.get_parallax(object_name)
-        constraints = "\n  parallax: [{:0.4f}, {:0.4f}]".format(plx, e_plx)
-    else:
-        constraints = "{}"
+        if plx is not None and e_plx is not None:
+            constraints = "\n  parallax: [{:0.4f}, {:0.4f}]".format(plx, e_plx)
+
 
     # grids
     if grid == 'binary':
