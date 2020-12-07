@@ -19,8 +19,8 @@ install_requires = [
 ]
 
 setuptools.setup(
-    name="speedyfit", # Replace with your own username
-    version="0.0.3",
+    name="speedyfit",
+    version="0.1.0",
     author="Joris Vos",
     author_email="joris.vos@uv.cl",
     description="MC approach to fit photometric SEDs",
@@ -36,7 +36,8 @@ setuptools.setup(
         'console_scripts': ['speedyfit=speedyfit.speedyfit:main', 'speedyfit-batch=speedyfit.speedyfit_batch:main'],
     },
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Console",
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
