@@ -38,7 +38,7 @@ in the setup file later. Here we picked the 'kurucz' grid as it works well for g
 
 The photometry file contains the following measurements:
 
-.. code-block::
+.. code-block:: bash
 
     |     band |                   flux |                  eflux |
     |  GAIA2.G | 2.5868394603952325e-12 |  4.765134383579859e-16 |
@@ -126,7 +126,7 @@ Finaly in the figure part, change the parameters of the distribution plot to:
 
 The final file then looks like:
 
-.. code-block::
+.. code-block:: yaml
 
     # photometry file with index to the columns containing the photbands, observations and errors
     objectname: HIP_4618
@@ -214,7 +214,7 @@ and luminosity of the systems while also taking the errors on the spectroscopic 
 
 To do this we add the following lines to the constrained parameters in the setup file:
 
-.. code-block::
+.. code-block:: yaml
 
     constraints:
       parallax: [7.3467, 0.0996]

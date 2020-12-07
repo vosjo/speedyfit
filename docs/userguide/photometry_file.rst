@@ -8,7 +8,7 @@ downloaded photometry to a text file using the
 
 A photometry file will look like:
 
-.. code-block::
+.. code-block:: bash
 
     |        band |  meas | emeas | unit | distance |             bibcode |      flux |     eflux |
     | SKYMAPPER.U | 11.37 | 0.01  |  mag |    0.209 | 2018PASA...35...10W | 2.502e-13 | 2.996e-15 |
@@ -60,7 +60,7 @@ photometry band, flux and error needs to be specified as an integer.
 
 An example of a headerless photometry file is:
 
-.. code-block::
+.. code-block:: bash
 
     #    meas  e_meas flag unit   photband  source        cmeas       e_cmeas     cunit         bibcode            comments
     # float64 float64 |S20 |S30   |S30      |S50          float64     float64     |S50          |S19               |S74
