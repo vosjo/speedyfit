@@ -1,5 +1,5 @@
-Model grids
-===========
+Model atmosphere grids
+======================
 
 Speedyfit is provided with 5 grids of model atmospheres. Below the range in effective temperature and surface gravity
 of all grids is shown. You can make these plots with the following python code:

@@ -230,6 +230,6 @@ Output and figures
         plot1: # number of the plot, up to 10
             type: <plot type> # which type of plot you want
             path: <figurename>.png # filename in which to store the figure
-            parameters: value # any other parameters to configure this plot
+            parameter: value # any other parameters to configure this plot
 
     For more information on available plots and their configuration see :doc:`making_figures`
