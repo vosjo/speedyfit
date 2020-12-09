@@ -1,2 +1,3 @@
 include speedyfit/tap_cats_phot.cfg
 include speedyfit/vizier_cats_phot.cfg
+include speedyfit/zeropoints.dat
