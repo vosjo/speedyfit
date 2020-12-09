@@ -1,16 +1,25 @@
 # https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 name: pypi-publish
-description: Upload Python distribution packages to PyPI
 
 on:
   push:
     branches: [main]
   release:
     types: [published]
+  workflow_dispatch:
+   inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags'
+   
+   
 
 jobs:
   build-n-publish:
-    name: Build and publish Python 🐍distributions to PyPI and TestPyPI
+    name: Build and publish Python distributions to PyPI and TestPyPI
     runs-on: ubuntu-18.04
 
     steps:
