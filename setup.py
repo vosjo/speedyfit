@@ -29,6 +29,7 @@ setuptools.setup(
     url="https://github.com/vosjo/speedyfit",
     packages=setuptools.find_packages(),
     install_requires=install_requires,
+    package_data={'speedyfit': ['speedyfit/zeropoints.dat', 'speedyfit/*.cfg']},
     include_package_data=True,
     test_suite='pytest.collector',
     tests_require=['pytest'],
