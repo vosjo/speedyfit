@@ -9,6 +9,12 @@ models. The speedyfit package can be installed with pip from the pypi repository
 
    pip install speedyfit
 
+If you want install the current development version directly from github you can also use pip:
+
+.. code-block:: bash
+
+   pip install git+https://github.com/vosjo/speedyfit.git#egg=speedyfit
+
 The atmosphere models that speedyfit uses to fit the SEDs can be downloaded from:
 
     http://www.astro.physik.uni-potsdam.de/~jorisvos/Speedyfit/modelgrids.tar.gz
