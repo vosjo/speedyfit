@@ -1,51 +1,64 @@
 # https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
+# https://github.com/chezou/tabula-py/blob/master/.github/workflows/pythonpublish.yml
 name: pypi-publish
 
 on:
-  push:
-    branches: [main]
-  release:
-    types: [published]
-  workflow_dispatch:
-   inputs:
-      logLevel:
-        description: 'Log level'     
-        required: true
-        default: 'warning'
+   push:
+      branches: [main]
+      # Sequence of patterns matched against refs/tags
       tags:
-        description: 'Test scenario tags'
-   
-   
+         - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+   workflow_dispatch:
+      # this trigger is included so the workflow can be  triggered by hand from github actions
+      inputs:
+         logLevel:
+            description: 'Log level'
+            required: true
+            default: 'warning'
 
 jobs:
-  build-n-publish:
-    name: Build and publish Python distributions to PyPI and TestPyPI
-    runs-on: ubuntu-18.04
+   release:
+      name: Create Release
+      runs-on: ubuntu-latest
+      steps:
+         - name: Checkout code
+           uses: actions/checkout@master
+         - name: Create Release
+           id: create_release
+           uses: actions/create-release@v1
+           env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+           with:
+              tag_name: ${{ github.ref }}
+              release_name: ${{ github.ref }}
+              body: ${{ github.event.head_commit.message }}
+              draft: false
+              prerelease: false
 
-    steps:
-      - uses: actions/checkout@master
+   build-and-publish:
+      name: Build and publish to PyPI
+      needs: release
+      runs-on: ubuntu-latest
 
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
+      steps:
+         - uses: actions/checkout@master
 
-      - name: Install pypa/build
-        run: |
-          python -m pip install build --user
+         - name: Set up Python 3.7
+           uses: actions/setup-python@v1
+           with:
+              python-version: 3.7
 
-      - name: Build a binary wheel and a source tarball
-        run: |
-          python -m build --sdist --wheel --outdir dist/
+         - name: Install dependencies
+           run: |
+              python -m pip install --upgrade pip
+              pip install setuptools wheel twine
 
-      - name: Publish distribution to Test PyPI
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          password: ${{ secrets.test_pypi_password }}
-          repository_url: https://test.pypi.org/legacy/
+         - name: Build
+           run: |
+              python setup.py sdist bdist_wheel
 
-      - name: Publish distribution to PyPI
-        if: startsWith(github.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          password: ${{ secrets.pypi_password }}
+         - name: Publish distribution to PyPI
+           if: startsWith(github.ref, 'refs/tags')
+           uses: pypa/gh-action-pypi-publish@master
+           with:
+              password: ${{ secrets.pypi_password }}
