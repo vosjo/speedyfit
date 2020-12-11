@@ -78,3 +78,23 @@ Lets compare a spectrum of each of these models at the same effective temperatur
     pl.show()
 
 .. image:: figures/model_comparison.png
+
+Adding model grids
+------------------
+
+You can add your own model atmosphere grids to speedyfit. For this you need a fits file containing the model
+atmospheres, and a separate file containing the models integrated over the pass bands that you want to use. This grid
+also needs have the reddening pre calculated for the range you want to include in the fit.
+
+The file name for the non integrated grid is not important. The filename of the integrated grid has to follow:
+<gridfilename>_lawfitzpatrick2004_Rv3.10.fits
+
+Then add the grid to the file 'grid_description.yaml' located in the same folder as the model grids: '$SPEEDYFIT_MODELS'
+
+The new grid should then show up when calling:
+
+.. code-block:: bash
+
+    speedyfit checkgrids
+
+
