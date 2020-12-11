@@ -1,5 +1,6 @@
 import re
 import os
+import yaml
 import numpy as np
 
 from astropy.io import fits
@@ -10,8 +11,22 @@ __defaults__ = dict(grid='kurucz',
                     directory=os.environ.get('SPEEDYFIT_MODELS', None), )
 defaults = __defaults__.copy()
 
+# load a list of all available integrated grids
+try:
+    ifile = open("{}/grid_description.yaml".format(defaults['directory']))
+    grid_description = yaml.safe_load(ifile)
+    ifile.close()
+except:
+    grid_description = {}
 
-def check_grids():
+
+def check_grids(print_bands=False):
+    """
+    Check which atmospheric model grids are installed and can be used by speedyfit.
+
+    :param print_bands: If True, also print the photometric pass bands that are available in the integrated grid.
+    :type print_bands: bool
+    """
     print("Checking which atmosphere models are available...")
 
     if defaults['directory'] is not None:
@@ -22,7 +37,12 @@ def check_grids():
         print("\texport SPEEDYFIT_MODELS='<path to extracted atmosphere models>'")
         return
 
-    for grid in ['kurucz2', 'munari', 'tmap', 'koester', 'blackbody']:
+    if len(grid_description.keys()) == 0:
+        print("grid_description.yaml file not found or no models included in the description file.")
+        print("Please add a grid_description.yaml file in the SPEEDYFIT_MODELS directory.")
+        return
+
+    for grid in grid_description.keys():
         print(grid)
         gridpath = get_grid_file(integrated=False, grid=grid)
         if os.path.isfile(gridpath):
@@ -36,6 +56,16 @@ def check_grids():
         else:
             print("\t integrated: NOT FOUND")
 
+        if print_bands:
+            hdu = fits.open(gridpath)
+            bands = set([b.split('.')[0] for b in hdu[1].data.dtype.names if '.' in b])
+            for b in bands:
+                print("\t - " + b)
+
+
+        if 'info' in grid_description[grid]:
+            print('\t info: ' + grid_description[grid]['info'])
+
 
 def get_grid_file(integrated=False, **kwargs):
     grid = kwargs.get('grid', defaults['grid'])
@@ -43,21 +73,8 @@ def get_grid_file(integrated=False, **kwargs):
     if os.path.isfile(grid):
         return grid
 
-    if grid == 'kurucz' or grid == 'kurucz2': # kurucz2 is necessary for backwards compatibility
-        filename = 'kurucz93_z0.0_k2odfnew_sed'
-
-    elif grid == 'munari':
-        filename = 'Munari2005_extended'
-
-    elif grid == 'tmap':
-        filename = 'TMAP2012_sdOB_extended'
-
-    elif grid == 'koester':
-        filename = 'Koester_WD_DA_2014_extended'
-
-    elif grid == 'blackbody':
-        filename = 'blackbody_discint'
-
+    if grid in grid_description:
+        filename = grid_description[grid]['filename']
     else:
         raise ValueError('Grid name ({}) not recognized!'.format(grid))
 

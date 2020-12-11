@@ -6,10 +6,11 @@ Speedyfit can run in three different modes:
 - setup: create a setup file for an SED fit.
 - phot: dowload photometry for an object.
 - fit: fit a photometric SED based on a setup file.
+- checkgrids: check which model atmosphere grids are installed.
 
 Each mode has its own options, which are described below.
 
-Speedyfit setup
+speedyfit setup
 ---------------
 
 The 'setup' mode allows you to create a default setup file for the object that you want to fit. This setup file will
@@ -53,7 +54,7 @@ available in the setup file are given in :doc:`setup_file`.
     If provided, speedyfit setup will NOT include the Gaia DR 2 parallax as a constraint in the fitting process. By
     default the parallax is always included.
 
-Speedyfit phot
+speedyfit phot
 --------------
 
 The 'photometry' or 'phot' mode allows you do download photometry from several vizier and tap catalogs for the objects
@@ -82,7 +83,7 @@ object name to work.
     You can specify the name of the file in which speedyfit will store the downloaded photometry. If no name is given,
     the default name is: <object_name>.phot
 
-Speedyfit fit
+speedyfit fit
 -------------
 
 Finally, the 'fit' mode will use all information provided in the setup file together with the downloaded photometry to
@@ -102,3 +103,16 @@ collected photometry of your target object and describe where it can be found in
 
     When provided, speedyfit fit will NOT display any of the plots, and will only save them to file. By default all
     plots requested in the setup file are shown when the fit is finished.
+
+speedyfit checkgrids
+--------------------
+
+The 'checkgrids' mode will check and print which model atmosphere grids are installed and can be used by speedyfit.
+
+**speedyfit** checkgrids [*options*]
+
+.. program:: speedyfit checkgrids
+
+.. option:: --bands
+
+    When provided, speedyfit will also list the photometric bands included in the integrated grids.

@@ -1,7 +1,7 @@
 Model atmosphere grids
 ======================
 
-Speedyfit is provided with 5 grids of model atmospheres. Below the range in effective temperature and surface gravity
+Speedyfit is provided with 4 grids of model atmospheres. Below the range in effective temperature and surface gravity
 of all grids is shown. You can make these plots with the following python code:
 
 .. code-block:: python
@@ -41,11 +41,6 @@ TMAP
 
 .. image:: figures/tmap.png
 
-Koester
--------
-
-.. image:: figures/koester.png
-
 Black body
 ----------
 
@@ -66,7 +61,7 @@ Lets compare a spectrum of each of these models at the same effective temperatur
     import numpy as np
     from speedyfit.model import get_table_single
 
-    grids = ['kurucz', 'munari', 'tmap', 'koester', 'blackbody']
+    grids = ['kurucz', 'munari', 'tmap', 'blackbody']
 
     pl.figure(figsize=(10,5))
 

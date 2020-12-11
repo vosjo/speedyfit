@@ -401,6 +401,11 @@ def perform_fit(args):
         pl.show()
 
 
+def check_grids(args):
+    print_bands = args.bands
+
+    model.check_grids(print_bands=print_bands)
+
 def main():
     parser = argparse.ArgumentParser(description="Speedyfit: obtaining and fitting photometric SEDs")
 
@@ -437,6 +442,16 @@ def main():
     fit_parser.add_argument('--noplot', dest='noplot', action='store_true',
                             help="Don't show any plots, only save to disk.")
     fit_parser.set_defaults(func=perform_fit)
+
+    # --check grids--
+    grid_parser = subparsers.add_parser('checkgrids', help='Check which model atmosphere grids are installed')
+
+    # grid_parser.add_argument('gridname', default=None,
+    #                         help='The name of the grid you want to check. If not provided all grids are listed.')
+    grid_parser.add_argument('--bands', dest='bands', action='store_true',
+                            help="List the photomtric bands included in the integrated lists.")
+    grid_parser.set_defaults(func=check_grids)
+
 
     args = parser.parse_args()
     args.func(args)

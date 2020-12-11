@@ -22,7 +22,7 @@ from speedyfit.model import get_grid_file, get_table_single
 #
 # pl.show()
 
-grids = ['kurucz', 'munari', 'tmap', 'koester', 'blackbody']
+grids = ['kurucz', 'munari', 'tmap', 'blackbody']
 
 pl.figure(figsize=(9,4))
 

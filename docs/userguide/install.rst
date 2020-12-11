@@ -33,7 +33,7 @@ To check that speedyfit can find all models run:
 
 .. code-block:: bash
 
-   python -c "from speedyfit.model import check_grids; check_grids()"
+   speedyfit checkgrids
 
 Which if everything went well should give you the following output:
 
@@ -48,9 +48,6 @@ Which if everything went well should give you the following output:
             raw: available
             integrated: available
    tmap
-            raw: available
-            integrated: available
-   koester
             raw: available
             integrated: available
    blackbody
