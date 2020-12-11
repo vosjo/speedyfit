@@ -17,4 +17,4 @@ the distance or reddening.
 
 The detailed documentation is a work in progress, but the command line documentation is complete. You can read the
  current version at:
-[speedyfit.readthedocs.io](https://speedyfit.readthedocs.io/en/latest/)
+[speedyfit.readthedocs.io](https://speedyfit.readthedocs.io/en/stable/)
