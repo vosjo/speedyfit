@@ -197,9 +197,9 @@ photband               eff_wave type    zp_corr          Flam0      source
  GAIA2.BP                5437.48 CCD       0.015     4.0145e-09     nan                                                                  
  GAIA2.G                 6710.93 CCD        0.01    2.46973e-09     nan                                                                  
  GAIA2.RP                7979.59 CCD       0.025    1.28701e-09     nan                                                                  
- GAIA2R.BP               5437.48 CCD        0.03     4.0011e-09     nan                                                                  
- GAIA2R.G                6710.93 CCD        0.03    2.47578e-09     nan                                                                  
- GAIA2R.RP               7979.59 CCD        0.03    1.28616e-09     nan                                                                  
+ GAIA3E.BP               5437.48 CCD           0    4.03545e-09     nan
+ GAIA3E.G                6710.93 CCD           0    2.48746e-09     nan
+ GAIA3E.RP               7979.59 CCD           0    1.27135e-09     nan
  GALEX.FUV               1538.62 CCD       0.029    4.72496e-08     http://galexgi.gsfc.nasa.gov/docs/galex/FAQ/counts_background.html   
  GALEX.NUV               2315.66 CCD       0.095    2.21466e-08     http://galexgi.gsfc.nasa.gov/docs/galex/FAQ/counts_background.html   
  GENEVA.B                4200.85 CCD      -0.898    6.51814e-09     Rufener1988                                                          

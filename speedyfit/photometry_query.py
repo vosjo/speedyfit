@@ -340,12 +340,12 @@ def get_parallax(objectname, radius=5):
    
    v_gaia = Vizier(columns=["Plx", "e_Plx", '+_r']) 
       
-   data = v_gaia.query_object(objectname, catalog=['I/345/gaia2'], radius=radius*u.arcsec)
+   data = v_gaia.query_object(objectname, catalog=['I/350/gaiaedr3'], radius=radius*u.arcsec)
 
    if len(data) == 0:
       return None, None
 
-   return data['I/345/gaia2']['Plx'][0], data['I/345/gaia2']['e_Plx'][0]
+   return data['I/350/gaiaedr3']['Plx'][0], data['I/350/gaiaedr3']['e_Plx'][0]
    
 
 #photometry = get_photometry('SB 705', 'SB_705.phot')
