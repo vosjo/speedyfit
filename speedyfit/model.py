@@ -120,6 +120,32 @@ def get_grid_ranges(**kwargs):
     return {'teff': teff, 'logg': logg, 'rad': rad}
 
 
+def get_grid_dimensions(**kwargs):
+    """
+    Retrieve possible effective temperatures and gravities from a grid.
+
+    E.g. kurucz, sdB, fastwind...
+
+    :rtype: (ndarray,ndarray)
+    :return: effective temperatures, gravities
+    """
+    gridfile = get_grid_file(**kwargs)
+    ff = fits.open(gridfile)
+    teffs = []
+    loggs = []
+    for hdu in ff[1:]:
+        teffs.append(float(hdu.header['TEFF']))
+        loggs.append(float(hdu.header['LOGG']))
+    ff.close()
+
+    # # -- maybe the fits extensions are not in right order...
+    # matrix = np.vstack([np.array(teffs), np.array(loggs)]).T
+    # matrix = numpy_ext.sort_order(matrix, order=[0, 1])
+    # teffs, loggs = matrix.T
+
+    return teffs, loggs
+
+
 def load_grids(gridnames, pnames, limits, photbands):
     """
     prepares the integrated photometry grid by loading the grid and cutting it to the size
@@ -393,3 +419,32 @@ def _get_flux_from_table(fits_ext, photbands, index=None, include_Labs=True):
     if index is not None:
         fluxes = fluxes
     return fluxes
+
+
+def luminosity(wave, flux, radius=1.):
+    """
+    Calculate the bolometric luminosity of a model SED.
+
+    Flux should be in cgs per unit wavelength (same unit as wave).
+    The latter is integrated out, so it is of no importance. After integration,
+    flux, should have units erg/s/cm2.
+
+    Returned luminosity is in solar units.
+
+    If you give radius=1 and want to correct afterwards, multiply the obtained
+    Labs with radius**2.
+
+    :param wave: model wavelengths
+    :type wave: ndarray
+    :param flux: model fluxes (Flam)
+    :type flux: ndarray
+    :param radius: stellar radius in solar units
+    :type radius: float
+    :return: total bolometric luminosity
+    :rtype: float
+    """
+    Lsol_cgs = 3.846e33
+    Rsol_cgs = 6.95508e10
+    Lint = np.trapz(flux, x=wave)
+    Labs = Lint * 4 * np.pi / Lsol_cgs * (radius * Rsol_cgs) ** 2
+    return Labs
