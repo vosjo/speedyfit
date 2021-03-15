@@ -6,6 +6,7 @@ import shutil
 import numpy as np
 
 from astropy.io import fits
+from astropy.table import Table
 
 from multiprocessing import cpu_count, Manager, Process
 
@@ -57,7 +58,7 @@ def get_responses(responses=None, wave=(0, np.inf)):
     return responses
 
 
-def get_threads(threads):
+def get_threads(threads, max=np.inf):
     """
     Reads the threadcount, and returns an integer
     accepts: <integer>, 'max', 'half', 'safe'
@@ -72,6 +73,9 @@ def get_threads(threads):
     elif threads == 'safe':
         threads = cpu_count() - 1
     threads = int(threads)
+
+    if threads > max:
+        threads = max
 
     return threads
 
@@ -105,14 +109,14 @@ def get_threads(threads):
 
         
 
-def calc_integrated_grid(threads=1, ebvs=None, law='fitzpatrick2004', Rv=3.1, responses=None, grid=None):
+def calc_integrated_grid(threads=1, ebvs=np.r_[0:2.01:0.01], law='fitzpatrick2004', Rv=3.1, responses=None, grid=None):
     """
     Integrate an entire SED grid over all passbands and save to a FITS file.
 
     The output file can be used to fit SEDs more efficiently, since integration
     over the passbands has already been carried out.
 
-    WARNING: this function can take a loooooong time to compute!
+    WARNING: this function can take a long time to compute!
 
     Extra keywords can be used to specify the grid.
 
@@ -127,13 +131,9 @@ def calc_integrated_grid(threads=1, ebvs=None, law='fitzpatrick2004', Rv=3.1, re
     :param responses: respons curves to add (if None, add all)
     :type responses: list of strings
     """
-    if ebvs is None:
-        ebvs = np.r_[0:2.01:0.01]
 
     # -- select number of threads
-    threads = get_threads(threads)
-    if threads > len(ebvs):
-        threads = len(ebvs)
+    threads = get_threads(threads, max=len(ebvs))
 
     # -- Get the grid, extract the different teff and logg combinations provided and load the first model to check
     #    which photbands can be calculated.
@@ -152,7 +152,7 @@ def calc_integrated_grid(threads=1, ebvs=None, law='fitzpatrick2004', Rv=3.1, re
 
     responses = get_responses(responses=responses, wave=wave)
 
-    # -- definition of one process:
+    # -- definition of one process for multi processing:
     def do_ebv_process(ebvs, arr, responses):
         # Run over all reddening values, calculate the reddened model and integrate it over all photbands.
         for ebv in ebvs:
@@ -165,9 +165,6 @@ def calc_integrated_grid(threads=1, ebvs=None, law='fitzpatrick2004', Rv=3.1, re
             # append to results
             arr.append([np.concatenate(([ebv], synflux))])
 
-    # -- do the calculations
-    c0 = time.time()
-
     # -- prepare the array containing the integrated fluxes
     #   (1 row per model, 1 column for each response curve and teff, logg, ebv and total luminosity)
     output = np.zeros((len(teffs) * len(ebvs), 4 + len(responses)))
@@ -178,6 +175,7 @@ def calc_integrated_grid(threads=1, ebvs=None, law='fitzpatrick2004', Rv=3.1, re
     exceptions_logs = []
 
     print('Total number of tables: %i ' % (len(teffs)))
+    c0 = time.time()
     for i, (teff, logg, hdu) in enumerate(zip(teffs, loggs, hdus)):
         if i > 0:
             print('%s %s %s %s: ET %d seconds' % (teff, logg, i, len(teffs), (time.time() - c0) / i * (len(teffs) - i)))
@@ -199,7 +197,7 @@ def calc_integrated_grid(threads=1, ebvs=None, law='fitzpatrick2004', Rv=3.1, re
         try:
             # -- collect the results and add them to 'output'
             arr = np.vstack([row for row in arr])
-            sa = np.argsort(arr[:, 0])
+            sa = np.argsort(arr[:, 0]) # sort on ebv
             arr = arr[sa]
             output[start:start + arr.shape[0], :3] = teff, logg, Labs
             output[start:start + arr.shape[0], 3:] = arr
@@ -213,43 +211,53 @@ def calc_integrated_grid(threads=1, ebvs=None, law='fitzpatrick2004', Rv=3.1, re
     # -- close the fits file with the model
     ff.close()
 
-    # -- make FITS columns
+    # -- create Table object and add header info to the table
+    output = Table(data=output, names=['teff', 'logg', 'Labs', 'ebv'] + responses)
+    output.meta['gridfile'] = (os.path.basename(gridfile), 'original model file')
+    output.meta['GRID'] = (grid, 'name of the model grid')
+    output.meta['fluxtype'] = ('Flambda', 'units of the flux')
+    output.meta['redlaw'] = (law, 'interstellar reddening law')
+    output.meta['rv'] = (Rv, 'interstellar reddening parameter')
+
+    # -- create the name of the output file and safe to disk
     outfile = 'i{0}'.format(os.path.basename(gridfile))
     outfile = os.path.splitext(outfile)
     outfile = outfile[0] + '_law{0}_Rv{1:.2f}'.format(law, Rv) + outfile[1]
     if os.path.isfile(outfile):
         print('Precaution: making original grid backup at {0}.backup'.format(outfile))
         shutil.copy(outfile, outfile + '.backup')
-    output = output.T
-    cols = [fits.Column(name='teff', format='E', array=output[0]),
-            fits.Column(name='logg', format='E', array=output[1]),
-            fits.Column(name='ebv', format='E', array=output[3]),
-            fits.Column(name='Labs', format='E', array=output[2])]
-    for i, photband in enumerate(responses):
-        cols.append(fits.Column(name=photband, format='E', array=output[4 + i]))
+    output.write(outfile, overwrite=True)
 
-    # -- make FITS extension and write grid/reddening specifications to header
-    table = fits.TableHDU.from_columns(fits.ColDefs(cols))
-    table.header.update(gridfile=os.path.basename(gridfile))
-    table.header.update(GRID=(grid, 'name of the model grid'),
-                        FLUXTYPE=('Flambda', 'units of the flux'),
-                        REDLAW=(law, 'interstellar reddening law'),
-                        RV=(Rv, 'interstellar reddening parameter'))
+    # # -- make FITS columns
+    # output = output.T
+    # cols = [fits.Column(name='teff', format='E', array=output[0]),
+    #         fits.Column(name='logg', format='E', array=output[1]),
+    #         fits.Column(name='ebv', format='E', array=output[3]),
+    #         fits.Column(name='Labs', format='E', array=output[2])]
+    # for i, photband in enumerate(responses):
+    #     cols.append(fits.Column(name=photband, format='E', array=output[4 + i]))
+    #
+    # # -- make FITS extension and write grid/reddening specifications to header
+    # table = fits.TableHDU.from_columns(fits.ColDefs(cols))
+    # table.header.update(gridfile=os.path.basename(gridfile))
+    # table.header.update(GRID=(grid, 'name of the model grid'),
+    #                     FLUXTYPE=('Flambda', 'units of the flux'),
+    #                     REDLAW=(law, 'interstellar reddening law'),
+    #                     RV=(Rv, 'interstellar reddening parameter'))
+    # # -- make/update complete FITS file
+    # if os.path.isfile(outfile):
+    #     os.remove(outfile)
+    #     print('Removed existing file: %s' % (outfile))
 
-    # -- make/update complete FITS file
-    if os.path.isfile(outfile):
-        os.remove(outfile)
-        print('Removed existing file: %s' % (outfile))
-    hdulist = fits.HDUList([])
-    hdulist.append(fits.PrimaryHDU(np.array([[0, 0]])))
-    hdulist.append(table)
-    hdulist.writeto(outfile)
-    print("Written output to %s" % (outfile))
+    # hdulist = fits.HDUList([])
+    # hdulist.append(fits.PrimaryHDU(np.array([[0, 0]])))
+    # hdulist.append(table)
+    # hdulist.writeto(outfile)
+    print("Written output to %s" % outfile)
 
-    print('Encountered %s exceptions!' % (exceptions))
+    print('Encountered %s exceptions!' % exceptions)
     for i in exceptions_logs:
-        print('ERROR')
-        print(i)
+        print('ERROR\n', i)
 
     return outfile
 
