@@ -344,3 +344,29 @@ def check_grid(grid):
     hdulist[1].data = hdulist[1].data[keep]
     hdulist.flush()
     hdulist.close()
+
+
+if __name__=="__main__":
+
+    responses = ['GALEX', 'IUE', 'STROMGREN', 'JOHNSON', 'GAIA3E', 'GAIA2', 'SKYMAPPER', 'APASS', 'SDSS', '2MASS', 'WISE']
+    evbs = np.r_[0:1.02:0.05]
+
+    # Blackbody
+    # calc_integrated_grid(threads=6, ebvs=evbs, law='fitzpatrick2004', Rv=3.1,
+    #                      responses=responses, grid='blackbody')
+
+    # # TMAP
+    # calc_integrated_grid(threads=6, ebvs=evbs, law='fitzpatrick2004', Rv=3.1,
+    #                      responses=responses, grid='tmap')
+
+    # # Kurucz
+    # calc_integrated_grid(threads=6, ebvs=evbs, law='fitzpatrick2004', Rv=3.1,
+    #                      responses=responses, grid='kurucz')
+
+    # # Munari
+    # calc_integrated_grid(threads=6, ebvs=evbs, law='fitzpatrick2004', Rv=3.1,
+    #                      responses=responses, grid='munari')
+
+    # Koester
+    calc_integrated_grid(threads=6, ebvs=evbs, law='fitzpatrick2004', Rv=3.1,
+                         responses=responses, grid='koester')
