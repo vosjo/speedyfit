@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
-
 import os
 import numpy as np
 
-from . import filters
-from . import model
-from . import fileio
+from speedyfit import filters, model, fileio
 
 basename = os.path.join(os.path.dirname(__file__),'redlaws')
 

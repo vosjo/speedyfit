@@ -9,7 +9,7 @@ import pandas as pd
 from astropy.coordinates import Angle
 
 from speedyfit import photometry_query
-from speedyfit.speedyfit import fit_sed, get_observations, write_results, plot_results
+from speedyfit.main import fit_sed, get_observations, write_results, plot_results
 from speedyfit.default_setup import default_tmap, default_binary
 
 

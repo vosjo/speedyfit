@@ -32,7 +32,7 @@ setup(
     test_suite='pytest.collector',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': ['speedyfit=speedyfit.speedyfit:main', 'speedyfit-batch=speedyfit.speedyfit_batch:main'],
+        'console_scripts': ['speedyfit=speedyfit.main:main', 'speedyfit-batch=speedyfit.speedyfit_batch:main'],
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",

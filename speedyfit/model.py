@@ -5,7 +5,7 @@ import numpy as np
 
 from astropy.io import fits
 
-from . import interpol, filters
+from speedyfit import interpol, filters
 
 __defaults__ = dict(grid='kurucz',
                     directory=os.environ.get('SPEEDYFIT_MODELS', None), )
