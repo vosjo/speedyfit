@@ -16,6 +16,7 @@ install_requires = [
     "scipy",
     "h5py",
     "pandas",
+    "gaiadr3-zeropoint",
 ]
 setup(
     name="speedyfit",

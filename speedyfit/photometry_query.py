@@ -2,6 +2,7 @@
 import os
 
 import configparser
+import warnings
 
 import numpy as np
 
@@ -18,6 +19,9 @@ from astropy.coordinates import SkyCoord
 from astropy.io import ascii
 
 from numpy.lib.recfunctions import append_fields
+
+from zero_point import zpt #gaiadr3-zeropoint
+zpt.load_tables()
 
 filedir = os.path.dirname(os.path.abspath(__file__))
 
@@ -334,29 +338,29 @@ def get_photometry(objectname, filename=None):
 
 def get_parallax(objectname, radius=5):
 
-    #data = Simbad.query_object(objectname)
-    #ra = Angle(data['RA'][0], unit='hour').degree
-    #dec = Angle(data['DEC'][0], unit='degree').degree
-
-    v_gaia = Vizier(columns=["Plx", "e_Plx", '+_r'])
+    v_gaia = Vizier(columns=["Plx", "e_Plx", '+_r', 'Gmag', 'nueff', 'pscol', 'ELAT', 'Solved'])
 
     data = v_gaia.query_object(objectname, catalog=['I/350/gaiaedr3'], radius=radius*u.arcsec)
 
     if len(data) == 0:
         return None, None
 
-    plx, plx_e = data['I/350/gaiaedr3']['Plx'][0], data['I/350/gaiaedr3']['e_Plx'][0]
+    data = data['I/350/gaiaedr3'][0]
 
-    # apply parallax zero point correction of Lindgren
-    # https://www.cosmos.esa.int/web/gaia/edr3-vs-dr2
-    plx -= 0.020
+    plx, plx_e = data['Plx'], data['e_Plx']
+
+    if not data['pscol']:
+        data['pscol'] = 0
+
+    # apply parallax zero point correction of Lindgren. If not possible, use the average offset.
+    # https://arxiv.org/pdf/2012.01742.pdf
+    # https://gitlab.com/icc-ub/public/gaiadr3_zeropoint
+    try:
+        zp = zpt.get_zpt(data['Gmag'], data['nueff'], data['pscol'], data['ELAT'], data['Solved'])
+    except Exception:
+        warnings.warn("Could not calculate the parallax zero point offset based on Lindgren+2020, using average")
+        zp = 0.02
+    plx -= zp
 
     return plx, plx_e
 
-
-#photometry = get_photometry('SB 705', 'SB_705.phot')
-
-#print photometry
-
-
-#get_parallax('SB 705', radius=5)
