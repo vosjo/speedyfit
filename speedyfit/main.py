@@ -99,6 +99,11 @@ def fit_sed(setup, photbands, obs, obs_err):
     pnames = setup['pnames']
     limits = np.array(setup['limits'])
 
+    # check if the number of parameters and limits match up.
+    assert len(pnames) == len(limits), \
+        f"The number of parameters fitted has to match the provided limits. Received: \n{len(pnames)} " \
+        f"pnames: {pnames} \n and \n{len(limits)} limits: {limits}"
+
     # -- pars constraints
     constraints = setup['constraints']
     for con, val in list(constraints.items()):
