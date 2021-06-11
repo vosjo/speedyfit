@@ -1,3 +1,5 @@
+import os
+
 import yaml
 import argparse
 import numpy as np
@@ -93,16 +95,39 @@ def get_observations(setup):
     return photbands, obs, obs_err
 
 
+def validate_setup(setup):
+
+    # check the photometry file
+    assert 'photometryfile' in setup, "You need to provide a photometry file in the setup using the photometryfile" \
+                                      " argument. This can be a n absolute or relative path."
+    assert os.path.isfile(setup['photometryfile']), f"The photometry file: {setup['photometryfile']} does not exist."
+
+    assert 'photband_index' in setup, "You need to set the photband_index in your setup."
+    assert 'obs_index' in setup, "You need to set the obs_index in your setup."
+    assert 'err_index' in setup, "You need to set the err_index in your setup."
+
+    # check if the number of parameters and limits match up.
+    assert len(setup['pnames']) == len(setup['limits']), \
+        f"The number of parameters fitted has to match the provided limits. Received: \n{len(setup['pnames'])} " \
+        f"pnames: {setup['pnames']} \n and \n{len(setup['limits'])} limits: {setup['limits']}"
+
+    # check constraints
+    assert type(setup['constraints']) is dict, "Constraints need to be provided as a dictionary in the setup."
+    for i, (con, val) in enumerate(list(setup['constraints'].items())):
+        assert len(val) == 2 or len(val) == 3, f"Constraint {i}: {con} = {val} can not be parsed. Constraints need " \
+                                 f"to have the form of: parameter: [val, error] or parameter: [val, -error, +error]"
+
+    # check derived limits
+    assert type(setup['derived_limits']) is dict, "Derived limits need to be provided as a dictionary in the setup."
+
+    return True
+
+
 def fit_sed(setup, photbands, obs, obs_err):
 
     # -- pars limits
     pnames = setup['pnames']
     limits = np.array(setup['limits'])
-
-    # check if the number of parameters and limits match up.
-    assert len(pnames) == len(limits), \
-        f"The number of parameters fitted has to match the provided limits. Received: \n{len(pnames)} " \
-        f"pnames: {pnames} \n and \n{len(limits)} limits: {limits}"
 
     # -- pars constraints
     constraints = setup['constraints']
@@ -382,6 +407,9 @@ def perform_fit(args):
     ifile = open(setup_file)
     setup = yaml.safe_load(ifile)
     ifile.close()
+
+    # -- check if the provided setup is valid and provide some useful feedback to the user if not.
+    validate_setup(setup)
 
     # -- obtain the observations
     photbands, obs, obs_err = get_observations(setup)
