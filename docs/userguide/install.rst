@@ -17,7 +17,7 @@ If you want install the current development version directly from github you can
 
 The atmosphere models that speedyfit uses to fit the SEDs can be downloaded from:
 
-    http://www.astro.physik.uni-potsdam.de/~jorisvos/Speedyfit/modelgrids.tar.gz
+    https://drive.google.com/file/d/1yKHB3uB7QUyhhkwa1hNMuWazxjLkLAjN/view?usp=sharing
 
 Download them and unpack them in a directory of your choice. The last step is to store the path to the atmosphere models
 in an environment variable so that Speedyfit will know where to get them. In a bash shell this is done as follows:
