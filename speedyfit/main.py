@@ -435,9 +435,19 @@ def perform_fit(args):
 
 
 def check_grids(args):
+    """
+    Run the check model grids function and report the results to the user.
+    """
     print_bands = args.bands
 
     model.check_grids(print_bands=print_bands)
+
+def copy_catalogs(args):
+    """
+    Run the copy_photometry_catalogs function so that the user can adapt them to their preferences.
+    """
+    photometry_query.copy_photometry_catalogs(overwrite=args.overwrite)
+
 
 def main():
     parser = argparse.ArgumentParser(description="Speedyfit: obtaining and fitting photometric SEDs")
@@ -485,6 +495,12 @@ def main():
                             help="List the photomtric bands included in the integrated lists.")
     grid_parser.set_defaults(func=check_grids)
 
+    # --copy photometry catalogs--
+    grid_parser = subparsers.add_parser('copy_catalogs', help='Copy the photometry catalogs files to the directory set '
+                                                              'in the SPEEDYFIT_MODELS environment variable.')
+    grid_parser.add_argument('--overwrite', dest='overwrite', action='store_true',
+                            help="When set already existing catalogs files in SPEEDYFIT_MODELS will be overwritten.")
+    grid_parser.set_defaults(func=copy_catalogs)
 
     args = parser.parse_args()
     args.func(args)

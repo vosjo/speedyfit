@@ -17,12 +17,17 @@ class TestCheckGrids:
 
     @pytest.fixture(scope='class')
     def make_modeldir(self, tmpdir_factory):
+        org_dir = os.environ['SPEEDYFIT_MODELS']
+
         models_dir = tmpdir_factory.mktemp('SED_models')
         models_dir.join('grid_description.yaml').write(grid_description_ex)
         models_dir.join('kurucz93_z0.0_k2odfnew_sed.fits').write('test')
         models_dir.join('ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits').write('test')
 
         yield models_dir
+
+        os.environ['SPEEDYFIT_MODELS'] = org_dir
+        reload(model)
 
     def test_check_grids__model_dir_without_dash(self, make_modeldir):
         models_dir = make_modeldir
