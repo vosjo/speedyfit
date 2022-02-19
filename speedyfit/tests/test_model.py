@@ -4,7 +4,51 @@ import numpy as np
 
 from speedyfit import model
 
+from importlib import reload
+
 import os
+
+grid_description_ex = """
+kurucz:
+    filename: 'kurucz93_z0.0_k2odfnew_sed'
+"""
+
+class TestCheckGrids:
+
+    @pytest.fixture(scope='class')
+    def make_modeldir(self, tmpdir_factory):
+        models_dir = tmpdir_factory.mktemp('SED_models')
+        models_dir.join('grid_description.yaml').write(grid_description_ex)
+        models_dir.join('kurucz93_z0.0_k2odfnew_sed.fits').write('test')
+        models_dir.join('ikurucz93_z0.0_k2odfnew_sed_lawfitzpatrick2004_Rv3.10.fits').write('test')
+
+        yield models_dir
+
+    def test_check_grids__model_dir_without_dash(self, make_modeldir):
+        models_dir = make_modeldir
+
+        os.environ['SPEEDYFIT_MODELS'] = str(models_dir)
+
+        reload(model)
+
+        assert model.defaults['directory'] == str(models_dir)
+
+        assert 'kurucz' in model.grid_description
+        assert 'filename' in model.grid_description['kurucz']
+        assert model.grid_description['kurucz']['filename'] == 'kurucz93_z0.0_k2odfnew_sed'
+
+    def test_check_grids__model_dir_with_dash(self, make_modeldir):
+        models_dir = make_modeldir
+
+        os.environ['SPEEDYFIT_MODELS'] = str(models_dir) + '/'
+
+        reload(model)
+
+        assert model.defaults['directory'] == str(models_dir) + '/'
+
+        assert 'kurucz' in model.grid_description
+        assert 'filename' in model.grid_description['kurucz']
+        assert model.grid_description['kurucz']['filename'] == 'kurucz93_z0.0_k2odfnew_sed'
 
 
 class TestModel:

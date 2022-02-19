@@ -13,7 +13,7 @@ defaults = __defaults__.copy()
 
 # load a list of all available integrated grids
 try:
-    ifile = open("{}/grid_description.yaml".format(defaults['directory']))
+    ifile = open(os.path.join(defaults['directory'], 'grid_description.yaml'))
     grid_description = yaml.safe_load(ifile)
     ifile.close()
 except:
