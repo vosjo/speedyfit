@@ -4,6 +4,34 @@ Speedyfit can automatically obtain photometry from several large online database
 It will use simbad to find the coordinates for your system, and will do a search based on those coordinates. The
 included catalogs are given below:
 
+GALEX GR6+7 (UV)
+^^^^^^^^^^^^^^^^
+
+Revised catalog of GALEX UV sources: https://galex.stsci.edu/GR6/ Both GALEX DR5 and the revised GALEX DR6-7
+are queried. Included photometric bands are:
+
+- GALEX.FUV
+- GALEX.NUV
+
+This catalog is queried through Vizier: `II/312/ais (DR5) <https://vizier.cds.unistra.fr/viz-bin/VizieR-2>`_, `II/335/galex_ais (DR6-7) <https://vizier.cds.unistra.fr/viz-bin/VizieR-2>`_
+
+Cite as: `Bianchi et al. 2017, ApJS <https://ui.adsabs.harvard.edu/abs/2017ApJS..230...24B/abstract>`_
+
+Gaia EDR3 (Optical)
+^^^^^^^^^^^^^^^^^^
+
+The early third data release of the Gaia Spacecraft:  https://gea.esac.esa.int/archive/
+Included photometric bands are:
+
+- GAIA3E.G
+- GAIA3E.BP
+- GAIA3E.RP
+
+This catalog is queried through Vizier: `I/350/gaiaedr3 <https://vizier.u-strasbg.fr/viz-bin/VizieR-3?-source=I/350/gaiaedr3>`_
+
+Cite as: `Gaia collaboration et al. 2020, A&A <https://ui.adsabs.harvard.edu/abs/2020yCat.1350....0G/abstract>`_
+
+
 Gaia DR2 (Optical)
 ^^^^^^^^^^^^^^^^^^
 
@@ -86,7 +114,7 @@ photometry from all existing catalogs. Included photometric bands are:
 - STROMGREN.B-Y
 - STROMGREN.M1
 - STROMGREN.C1
-- STROMGREN.HBN-HBW (Limited availablility)
+- STROMGREN.HBN-HBW (Limited availability)
 
 These measurements are automatically converted to Stromgren u, v, b, y and beta.
 
@@ -108,7 +136,8 @@ The Two Micron All Sky Survey: https://irsa.ipac.caltech.edu/Missions/2mass.html
 - 2MASS.H (Magnitude limit = 15.1)
 - 2MASS.KS (Magnitude limit = 14.3)
 
-This catalog is queried through Vizier: `II/246/out <https://vizier.u-strasbg.fr/viz-bin/VizieR-3?-source=II/246/out>`_
+| This catalog is queried through Vizier: `II/246/out <https://vizier.u-strasbg.fr/viz-bin/VizieR-3?-source=II/246/out>`_
+| Access to the images is obtained via isra: `<https://irsa.ipac.caltech.edu/Missions/2mass.html>`_
 
 Cite as: `Skrutskie et al. 2006, AJ <https://ui.adsabs.harvard.edu/abs/2006AJ....131.1163S>`_
 
@@ -122,7 +151,8 @@ The Wide-field Infrared Survey Explorer: http://wise.ssl.berkeley.edu/. Included
 - WISE.W3
 - WISE.W4
 
-This catalog is queried through Vizier: `II/311/wise <https://vizier.u-strasbg.fr/viz-bin/VizieR-3?-source=II/311/wise>`_
+| This catalog is queried through Vizier: `II/328/allwise <https://vizier.u-strasbg.fr/viz-bin/VizieR-3?-source=II/328/allwise>`_
+| Access to the images is obtained via isra: `<https://irsa.ipac.caltech.edu/applications/wise/>`_
 
-Cite as: `Cutri et al. 2012, yCat <http://cdsads.u-strasbg.fr/abs/2012yCat.2311....0C>`_
+Cite as: `Cutri et al. 2013, yCat <https://ui.adsabs.harvard.edu/abs/2013wise.rept....1C/abstract>`_
 
