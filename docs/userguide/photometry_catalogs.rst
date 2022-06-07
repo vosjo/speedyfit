@@ -144,7 +144,9 @@ Cite as: `Skrutskie et al. 2006, AJ <https://ui.adsabs.harvard.edu/abs/2006AJ...
 WISE (IR)
 ^^^^^^^^^
 
-The Wide-field Infrared Survey Explorer: http://wise.ssl.berkeley.edu/. Included photometric bands are:
+The Wide-field Infrared Survey Explorer: http://wise.ssl.berkeley.edu/. This is the ALLWISE version of the WISE
+catalog. It is a combination of the data from the original WISE mission, extended by the NEOWISE mission which continued
+observing in band W1 and W2 after W3 and W4 ran out of coolant. Included photometric bands are:
 
 - WISE.W1
 - WISE.W2
