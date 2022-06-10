@@ -116,3 +116,13 @@ The 'checkgrids' mode will check and print which model atmosphere grids are inst
 .. option:: --bands
 
     When provided, speedyfit will also list the photometric bands included in the integrated grids.
+
+speedyfit copy_catalogs
+-----------------------
+
+The 'copy_catalogs' command will make a copy of the photometry catalog files in the SPEEDYFIT_MODELS directory so you
+can edit them.
+
+**speedyfit** copy_catalogs
+
+This command has no options. See :doc:`add_photometry_catalogs` for more info.
