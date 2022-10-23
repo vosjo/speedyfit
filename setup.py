@@ -6,9 +6,9 @@ with open("README.md", "r") as fh:
 install_requires = [
     "numpy",
     "emcee",
-    "astropy",
+    "astropy>=5.1",
     "astroquery",
-    "pyvo",
+    "pyvo>=1.4",
     "matplotlib",
     "pyaml",
     "corner",
