@@ -1,3 +1,4 @@
+import glob
 import re
 import os
 import yaml
@@ -13,10 +14,12 @@ defaults = __defaults__.copy()
 
 # load a list of all available integrated grids
 try:
-    ifile = open(os.path.join(defaults['directory'], 'grid_description.yaml'))
+    grid_description_file = os.path.join(defaults.get('directory', ''), 'grid_description.yaml')
+    ifile = open(grid_description_file)
     grid_description = yaml.safe_load(ifile)
     ifile.close()
 except:
+    grid_description_file = os.path.join(defaults.get('directory', ''), 'grid_description.yaml')
     grid_description = {}
 
 
@@ -30,7 +33,8 @@ def check_grids(print_bands=False):
     print("Checking which atmosphere models are available...")
 
     if defaults['directory'] is not None:
-        print("Checking for models in {}".format(defaults['directory']))
+        print(f"Checking for models in {defaults['directory']}")
+        print(f"Using grid description file: {grid_description_file}")
     else:
         print("SPEEDYFIT_MODELS environmental variable not set. CAN NOT find models!")
         print("Please point the SPEEDYFIT_MODELS variable to the directory where you stored models. On bash use:")
@@ -40,6 +44,9 @@ def check_grids(print_bands=False):
     if len(grid_description.keys()) == 0:
         print("grid_description.yaml file not found or no models included in the description file.")
         print("Please add a grid_description.yaml file in the SPEEDYFIT_MODELS directory.")
+        print(f"SPEEDYFIT_MODELS directory is: {defaults.get('directory', '')}")
+        files = glob.glob(os.path.join(defaults.get('directory', ''), '*'))
+        print(f"Content of SPEEDYFIT_MODELS is: {files}")
         return
 
     for grid in grid_description.keys():
@@ -62,7 +69,6 @@ def check_grids(print_bands=False):
             for b in bands:
                 print("\t - " + b)
 
-
         if 'info' in grid_description[grid]:
             print('\t info: ' + grid_description[grid]['info'])
 
@@ -76,14 +82,14 @@ def get_grid_file(integrated=False, **kwargs):
     if grid in grid_description:
         filename = grid_description[grid]['filename']
     else:
-        raise ValueError('Grid name ({}) not recognized!'.format(grid))
+        raise ValueError(f'Grid name ({grid}) not recognized!')
 
     if integrated:
         filename = 'i' + filename + '_lawfitzpatrick2004_Rv3.10'
 
     directory = kwargs.get('directory', defaults['directory'])
 
-    return directory + filename + '.fits'
+    return os.path.join(directory, filename + '.fits')
 
 
 def get_grid_ranges(**kwargs):
