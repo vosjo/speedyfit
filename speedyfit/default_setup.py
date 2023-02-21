@@ -44,7 +44,7 @@ photometryfile: <photfilename>
 photband_index: band
 obs_index: flux
 err_index: eflux
-photband_exclude: ['GALEX', 'SDSS', 'WISE.W3', 'WISE.W4']
+photband_exclude: ['GALEX', 'SDSS', 'WISE.W3', 'WISE.W4', 'GAIA2']
 # parameters to fit and the limits on them in same order as parameters
 pnames: [teff, logg, rad, teff2, logg2, rad2, ebv]
 limits:

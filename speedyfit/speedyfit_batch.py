@@ -13,6 +13,17 @@ from speedyfit.main import fit_sed, get_observations, write_results, plot_result
 from speedyfit.default_setup import default_tmap, default_binary
 
 
+def extract_constraint_names(data):
+    columns = data.columns.values
+    constraint_names = []
+    for name in columns:
+        if 'constraint_' in name:
+            cname = name.split('_')[1]
+            constraint_names.append(cname)
+
+    return constraint_names
+
+
 def process_objects(data):
 
     def convert_ra(ra):
@@ -35,8 +46,10 @@ def process_objects(data):
             dec = '{:+03.0f}{:02.0f}{:05.2f}'.format(a[0], abs(a[1]), abs(a[2]))
         return dec
 
+    # check if we are working with names or coordinates
     if 'name' in data.columns.values:
         object_list = data['name'].apply(lambda x: x.replace(' ', '_')).values
+        object_list = pd.DataFrame({'name': object_list.values})
     else:
         # deal with coordinates
         ra_ = data['ra'].apply(convert_ra)
@@ -44,7 +57,12 @@ def process_objects(data):
 
         name = ['J{}{}'.format(r, d) for r, d in zip(ra_, dec_)]
 
-        object_list = pd.Series(data=name)
+        object_list = pd.DataFrame({'name': name})
+
+    # now check for constraints
+    constraint_cols = extract_constraint_names(data)
+    for cname in constraint_cols:
+        object_list[cname] = data['constraint_'+cname]
 
     return object_list
 
@@ -59,7 +77,7 @@ def read_setup(setup):
 
     elif setup == 'single':
         setup = default_tmap
-    elif setup == 'double':
+    elif setup == 'binary':
         setup = default_binary
     else:
         print('Setup not recognized! Using single as default')
@@ -70,7 +88,11 @@ def read_setup(setup):
 
 def prepare_setup(object_list, basedir, default_setup):
 
-    for objectname in object_list:
+    constraint_names = list(object_list.columns.values)
+    constraint_names.remove('name')
+
+    for i, row in object_list.iterrows():
+        objectname = row['name']
 
         if not os.path.isdir(basedir+'/'+objectname):
             os.mkdir(basedir+'/'+objectname)
@@ -85,7 +107,11 @@ def prepare_setup(object_list, basedir, default_setup):
             objectname_ = basedir + '/' + objectname + '/' + objectname
             out = out.replace('<objectname>', objectname_)
         if '<constraints>' in out:
-            constraints = "\n  parallax: [{:0.4f}, {:0.4f}]".format(plx, e_plx)
+            constraints = f"\n  parallax: [{plx:0.4f}, {e_plx:0.4f}]"
+            for cname in constraint_names:
+                val = row[cname]
+                val = val.replace('(', '').replace(')', '')
+                constraints += f"\n  {cname}: [{val}]"
             out = out.replace('<constraints>', constraints)
 
         filename = basedir + '/' + objectname + '/' + objectname + '_setup.yaml'
@@ -97,7 +123,8 @@ def prepare_setup(object_list, basedir, default_setup):
 
 def prepare_photometry(object_list, basedir, skip_existing=True):
 
-    for objectname in object_list:
+    for i, row  in object_list.iterrows():
+        objectname = row['name']
 
         if os.path.isfile(basedir+'/'+objectname+'/'+objectname+'.phot') and skip_existing:
             continue
@@ -117,7 +144,8 @@ def fit_seds(object_list, basedir):
 
     all_results = {}
 
-    for objectname in object_list:
+    for i, row in object_list.iterrows():
+        objectname = row['name']
 
         # read the setup
         filename = basedir + '/' + objectname + '/' + objectname + '_setup.yaml'
@@ -164,7 +192,7 @@ def main():
     parser.add_argument('filename', action="store", type=str,
                         help='file containing a list with the names or coordinates of the systems to fit')
     parser.add_argument("-setup", dest='setup', type=str, default='single',
-                        help="The path to the setup file to use, or a standard: 'single' or 'double'. "
+                        help="The path to the setup file to use, or a standard: 'single' or 'binary'. "
                              "(default = 'single'")
     parser.add_argument("-basedir", dest='basedir', type=str, default='./',
                         help="The directory where all photometry, setup and results will be stored. (default = ./)")
@@ -184,6 +212,7 @@ def main():
 
     object_data = pd.read_csv(args.filename)
     object_list = process_objects(object_data)
+    print(object_list)
 
     # create the setup file for all systems
     prepare_setup(object_list, basedir, default_setup)
