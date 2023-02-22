@@ -242,14 +242,14 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
    pl.xlim(abs_xlim)
    pl.ylim([0.9*np.min(obs[~colors]), 1.1*np.max(obs[~colors])])
    pl.legend(loc='best', prop={'size': 9}, numpoints=1)
-   ax1.set_xscale("log", nonposx='clip')
-   ax1.set_yscale("log", nonposy='clip')
+   ax1.set_xscale("log", nonpositive='clip')
+   ax1.set_yscale("log", nonpositive='clip')
    
    pl.ylabel('Absolute Flux')
    
    #-- add band names to top of axis
    ax2 = ax1.twiny()
-   ax2.set_xscale("log", nonposx='clip')
+   ax2.set_xscale("log", nonpositive='clip')
    ax2.set_xlim(abs_xlim)
    waves = np.array([filters.eff_wave(p) for p in photbands[~colors]])
    bandnames = np.array([b.split('.')[-1] for b in photbands[~colors]])
@@ -285,7 +285,7 @@ def plot_fit(obs, obs_err, photbands, pars={}, constraints={}, grids=[], gridnam
    pl.axhline(y=0, color='k', ls='--')
    
    pl.xlim(abs_xlim)
-   pl.gca().set_xscale('log',nonposx='clip')
+   pl.gca().set_xscale('log',nonpositive='clip')
    
    pl.ylabel('(O-C) (mag)')
    pl.xlabel('Wavelength (AA)')
