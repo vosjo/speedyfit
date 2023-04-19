@@ -1,0 +1,5 @@
+__version__ = "0.2.4"
+__title__ = "speedyfit"
+__description__ = "MC approach to fit photometric SEDs"
+__author__ = "Joris Vos"
+__email__ = "joris.vos@uv.cl"
