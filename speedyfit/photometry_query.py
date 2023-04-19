@@ -388,13 +388,16 @@ def get_photometry(objectname, filename=None):
     return photometry
 
 
-def get_parallax(objectname, radius=5):
+def get_parallax(objectname, ra=None, dec=None, radius=5):
 
     v_gaia = Vizier(columns=["Plx", "e_Plx", '+_r', 'Gmag', 'nueff', 'pscol', 'ELAT', 'Solved'])
 
+    # try the query with the objectname first
     data = v_gaia.query_object(objectname, catalog=['I/350/gaiaedr3'], radius=radius*u.arcsec)
 
-    if len(data) == 0:
+    # if no data is returned retry the query with the coordinates if possible
+    if len(data) == 0 and ra is not None and dec is not None:
+
         return None, None
 
     data = data['I/350/gaiaedr3'][0]

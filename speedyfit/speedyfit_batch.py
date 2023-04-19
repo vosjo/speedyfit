@@ -5,13 +5,12 @@ import argparse
 import yaml
 
 import pandas as pd
-
-from astropy.coordinates import Angle
+import numpy as np
 
 from speedyfit import photometry_query
 from speedyfit.main import fit_sed, get_observations, write_results, plot_results
 from speedyfit.default_setup import default_tmap, default_binary
-
+from speedyfit.utils import get_name_from_coordinates
 
 def extract_constraint_names(data):
     columns = data.columns.values
@@ -26,38 +25,18 @@ def extract_constraint_names(data):
 
 def process_objects(data):
 
-    def convert_ra(ra):
-        if ' ' in str(ra).strip() or ':' in str(ra).strip():
-            ra = str(ra).strip()
-            ra = ra.replace(' ', '').replace(':', '')
-        else:
-            a = Angle(ra, unit='degree').hms
-            ra = '{:02.0f}{:02.0f}{:05.2f}'.format(*a)
-        return ra
-
-    def convert_dec(dec):
-        if ' ' in str(dec).strip() or ':' in str(dec).strip():
-            dec = str(dec).strip()
-            dec = dec.replace(' ', '').replace(':', '')
-            if not '-' in dec and not '+' in dec:
-                dec = '+' + dec
-        else:
-            a = Angle(dec, unit='degree').dms
-            dec = '{:+03.0f}{:02.0f}{:05.2f}'.format(a[0], abs(a[1]), abs(a[2]))
-        return dec
-
-    # check if we are working with names or coordinates
+    # check if we are working with names or if we need to make names from the coordinates
     if 'name' in data.columns.values:
-        object_list = data['name'].apply(lambda x: x.replace(' ', '_')).values
-        object_list = pd.DataFrame({'name': object_list.values})
+        object_list = data['name'].apply(lambda x: x.replace(' ', '_').strip()).values
+        object_list = pd.DataFrame({'name': object_list})
     else:
-        # deal with coordinates
-        ra_ = data['ra'].apply(convert_ra)
-        dec_ = data['dec'].apply(convert_dec)
-
-        name = ['J{}{}'.format(r, d) for r, d in zip(ra_, dec_)]
-
+        # convert coordinates into a name if no name was given.
+        name = get_name_from_coordinates(data['ra'].values, data['dec'].values)
         object_list = pd.DataFrame({'name': name})
+
+    if 'ra' in data and 'dec' in data:
+        object_list['ra'] = data['ra']
+        object_list['dec'] = data['dec']
 
     # now check for constraints
     constraint_cols = extract_constraint_names(data)
@@ -90,9 +69,13 @@ def prepare_setup(object_list, basedir, default_setup):
 
     constraint_names = list(object_list.columns.values)
     constraint_names.remove('name')
+    constraint_names.remove('ra')
+    constraint_names.remove('dec')
 
     for i, row in object_list.iterrows():
         objectname = row['name']
+        ra, dec = row['ra'], row['dec']
+        print(f'Preparing setup files for object: {objectname} ({ra}  {dec})')
 
         if not os.path.isdir(basedir+'/'+objectname):
             os.mkdir(basedir+'/'+objectname)
@@ -110,7 +93,12 @@ def prepare_setup(object_list, basedir, default_setup):
             constraints = f"\n  parallax: [{plx:0.4f}, {e_plx:0.4f}]"
             for cname in constraint_names:
                 val = row[cname]
-                val = val.replace('(', '').replace(')', '')
+                try:
+                    val = val.replace('(', '').replace(')', '')
+                except:
+                    continue
+                if val.strip() == '':
+                    continue
                 constraints += f"\n  {cname}: [{val}]"
             out = out.replace('<constraints>', constraints)
 
@@ -140,12 +128,16 @@ def prepare_photometry(object_list, basedir, skip_existing=True):
             print(e)
 
 
-def fit_seds(object_list, basedir):
+def fit_seds(object_list, basedir, start_index=0, stop_index=None):
 
     all_results = {}
 
-    for i, row in object_list.iterrows():
+    stop_index = len(object_list) if stop_index is None else stop_index
+    object_list_sel = object_list[start_index:stop_index+1]
+
+    for i, row in object_list_sel.iterrows():
         objectname = row['name']
+        print(f"Starting fit {i}/{len(object_list)} for object: {objectname}")
 
         # read the setup
         filename = basedir + '/' + objectname + '/' + objectname + '_setup.yaml'
@@ -200,8 +192,10 @@ def main():
                         help="Fit the systems")
     parser.add_argument('--phot', dest='phot', action='store_true',
                         help='Obtain photometry of the systems')
-    parser.add_argument('--noplot', dest='noplot', action='store_true',
-                        help="Don't show any plots, only store to disk.")
+    parser.add_argument('-start', dest='start_index', type=int, default=0,
+                        help='Index of the object with which to start the fit, defaults to 0')
+    parser.add_argument('-stop', dest='stop_index', type=int, default=None,
+                        help='Index of the object with which to end the fitting, defaults to None (all objects are fitted).')
     args, variables = parser.parse_known_args()
 
     basedir = args.basedir
@@ -212,7 +206,6 @@ def main():
 
     object_data = pd.read_csv(args.filename)
     object_list = process_objects(object_data)
-    print(object_list)
 
     # create the setup file for all systems
     prepare_setup(object_list, basedir, default_setup)
@@ -223,4 +216,4 @@ def main():
 
     # fit all systems if requested
     if args.fit:
-        fit_seds(object_list, basedir)
+        fit_seds(object_list, basedir, start_index=args.start_index, stop_index=args.stop_index)
