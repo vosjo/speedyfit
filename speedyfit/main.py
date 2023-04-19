@@ -320,7 +320,7 @@ def plot_results(setup, results, samples, constraints, gridnames, obs, obs_err, 
 
             fig = corner.corner(data.view(np.float64).reshape(data.shape + (-1,)),
                                 labels=data.dtype.names,
-                                quantiles=setup[pindex].get('quantiles', [0.025, 0.16, 0.5, 0.84, 0.975]),
+                                quantiles=setup[pindex].get('quantiles', [0.16, 0.5, 0.84]),
                                 levels=setup[pindex].get('levels', [0.393, 0.865, 0.95]),
                                 truths=truths,
                                 show_titles=True, title_kwargs={"fontsize": 12}, )
