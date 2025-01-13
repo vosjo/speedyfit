@@ -27,6 +27,7 @@ the distance or reddening but equally so constraints from spectroscopic observat
    userguide/add_photometry_catalogs
    userguide/photometry_file
    userguide/model_grids
+   userguide/add_photometric_bands
    userguide/making_figures
 
 
