@@ -3,6 +3,10 @@
 [![Documentation Status](https://readthedocs.org/projects/speedyfit/badge/?version=latest)](https://speedyfit.readthedocs.io/en/latest/?badge=latest)
 [![GitHub](https://img.shields.io/github/license/vosjo/speedyfit)](https://github.com/vosjo/speedyfit/blob/master/LICENSE)
 
+> [!NOTE]
+> 
+> *07-03-2025:* I wrote this package many years ago. I have left academia 5 years ago and now have a full time job in industry, I have a family and hobbies. I can no longer provide support for this package. If you have an easy question I will try to answer, but don't except a quick or satisfying reply. Otherwise, feel free to use / modify it any way you see fit. 
+
 # Speedyfit
 
 A python package to fit the photometric spectral energy distribution of stars. Uses a Markov chain Monte Carlo approach 
