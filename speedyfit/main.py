@@ -344,7 +344,7 @@ def create_setup(args):
     if grid == 'munari':
         photband_exclude = "['GALEX', 'SDSS', 'WISE']"
     else:
-        photband_exclude = "['GALEX', 'SDSS', 'WISE.W3', 'WISE.W4']"
+        photband_exclude = "['GALEX', 'SKYMAPPER', 'SDSS', 'WISE.W3', 'WISE.W4']"
 
     # parameter ranges
     if grid != 'binary':
@@ -387,6 +387,8 @@ def create_setup(args):
 
     if photometry:
         photometry = photometry_query.get_photometry(object_name, filename=object_name + '.phot')
+
+    print(f"To start the fit run:\n\tspeedyfit fit {filename}")
 
 
 def get_photometry(args):

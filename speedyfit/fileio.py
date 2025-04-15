@@ -101,7 +101,7 @@ def read2array(filename,**kwargs):
    @return: data array (, list of comments)
    @rtype: ndarray (, list)
    """
-   dtype = kwargs.get('dtype',np.float)
+   dtype = kwargs.get('dtype',float)
    return_comments = kwargs.get('return_comments',False)
    data,comm = read2list(filename,**kwargs)
    data = np.array(data,dtype=dtype)

@@ -17,19 +17,24 @@ This catalog is queried through Vizier: `II/312/ais (DR5) <https://vizier.cds.un
 
 Cite as: `Bianchi et al. 2017, ApJS <https://ui.adsabs.harvard.edu/abs/2017ApJS..230...24B/abstract>`_
 
-Gaia EDR3 (Optical)
+Gaia DR3 (Optical)
 ^^^^^^^^^^^^^^^^^^
 
-The early third data release of the Gaia Spacecraft:  https://gea.esac.esa.int/archive/
+The third data release of the Gaia Spacecraft:  https://gea.esac.esa.int/archive/
 Included photometric bands are:
 
 - GAIA3E.G
 - GAIA3E.BP
 - GAIA3E.RP
 
-This catalog is queried through Vizier: `I/350/gaiaedr3 <https://vizier.u-strasbg.fr/viz-bin/VizieR-3?-source=I/350/gaiaedr3>`_
+This catalog is queried through Vizier: `I/355/gaiadr3 <https://vizier.cds.unistra.fr/viz-bin/VizieR-3?-source=I/355/gaiadr3>`_
 
-Cite as: `Gaia collaboration et al. 2020, A&A <https://ui.adsabs.harvard.edu/abs/2020yCat.1350....0G/abstract>`_
+Cite as: `Gaia Collaboration, A. Vallenari, A. G. A. Brown, et al. (2023j), A&A <https://ui.adsabs.harvard.edu/abs/2023A%26A...674A...1G/abstract>`_
+
+.. note::
+
+    The passband definition of GAIA DR3 is the same as that of GAIA EDR3 (`GAIA DR3 passbands <https://www.cosmos.esa.int/web/gaia/dr3-passbands>`_),
+    and speedyfit uses the EDR3 band names.
 
 
 Gaia DR2 (Optical)

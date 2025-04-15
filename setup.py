@@ -35,7 +35,7 @@ install_requires = [
     "numpy",
     "emcee",
     "astropy>=5.1",
-    "astroquery",
+    "astroquery>=0.4.10",
     "pyvo>=1.4",
     "matplotlib",
     "pyaml",
@@ -45,6 +45,7 @@ install_requires = [
     "h5py",
     "pandas",
     "gaiadr3-zeropoint",
+    "pytz",
 ]
 setup(
     name="speedyfit",

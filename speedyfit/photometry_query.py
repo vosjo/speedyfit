@@ -54,13 +54,13 @@ def load_photometry_catalogs():
     viz_info = configparser.ConfigParser()
     viz_info.optionxform = str # make sure the options are case sensitive
     with open(vizier_file) as ifile:
-        viz_info.readfp(ifile)
+        viz_info.read_file(ifile)
 
     print(f"Going to read TAP photometry catalog from {tap_file}.")
     tap_info = configparser.ConfigParser()
     tap_info.optionxform = str  # make sure the options are case sensitive
     with open(tap_file) as ifile:
-        tap_info.readfp(ifile)
+        tap_info.read_file(ifile)
 
     return viz_info, tap_info
 VIZ_INFO, TAP_INFO = load_photometry_catalogs()
@@ -110,8 +110,8 @@ def get_coordinate(objectname):
 
     else:
         data = Simbad.query_object(objectname)
-        ra = Angle(data['RA'][0], unit='hour').degree
-        dec = Angle(data['DEC'][0], unit='degree').degree
+        ra = Angle(data['ra'][0], unit='degree').degree
+        dec = Angle(data['dec'][0], unit='degree').degree
 
     return ra, dec
 
