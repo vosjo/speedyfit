@@ -72,5 +72,5 @@ setup(
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Astronomy",
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.9',
 )
